@@ -1,0 +1,520 @@
+ЗАДАНИЕ1.1:
+root@astra:~# sudo su -
+root@astra:~# hostnamectl
+   Static hostname: astra.testlab.lan
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: 3194287d6c5f498eb9b51e3d9e2d8766
+           Boot ID: 2dcab26a5d62440fbef8101454cbd9b8
+    Virtualization: oracle
+  Operating System: Astra Linux
+            Kernel: Linux 5.15.0-83-generic
+      Architecture: x86-64
+root@astra:~# useradd -m testuser1
+root@astra:~# useradd -m testuser2
+root@astra:~# ls -la /home
+итого 24
+drwxr-xr-x  6 root      root      4096 мар 13 20:18 .
+drwxr-xr-x 22 root      root      4096 мар 13 18:29 ..
+drwxr-xr-x  2 root      root      4096 окт 28  2022 .pdp
+drwx------ 20 sa        sa        4096 мар 13 19:55 sa
+drwx------  3 testuser1 testuser1 4096 мар 13 20:18 testuser1
+drwx------  3 testuser2 testuser2 4096 мар 13 20:18 testuser2
+root@astra:~# chage -l testuser1
+Последний раз пароль был изменён				: мар 13, 2024
+Срок действия пароля истекает					: никогда
+Пароль будет деактивирован через				: никогда
+Срок действия учётной записи истекает				: никогда
+Минимальное количество дней между сменой пароля			: 0
+Максимальное количество дней между сменой пароля		: 99999
+Количество дней с предупреждением перед деактивацией пароля	: 7
+root@astra:~# cat /etc/passwd | grep 'testuser*'
+testuser1:x:1001:1002::/home/testuser1:/bin/sh
+testuser2:x:1002:1003::/home/testuser2:/bin/sh
+root@astra:~# pass
+passmass  passwd
+root@astra:~# passwd -q testuser1
+Новый пароль :
+Повторите ввод нового пароля :
+passwd: пароль успешно обновлён
+root@astra:~# passwd -S testuser1
+testuser1 P 2024-03-13 0 99999 7 -1
+root@astra:~#
+
+ЗАДАНИЕ1.2:
+[root@altwks ~]# hostnamectl
+ Static hostname: altwks.testlab.lan
+       Icon name: computer-vm
+         Chassis: vm
+      Machine ID: 72bc4cf527a1a98b056ae5dd643507b4
+         Boot ID: f0fdbdcc94834f30b1cf851d8558b4a7
+  Virtualization: oracle
+Operating System: ALT Workstation 10.2 (Autolycus)
+     CPE OS Name: cpe:/o:alt:workstation:10.2
+          Kernel: Linux 5.10.164-std-def-alt1
+    Architecture: x86-64
+ Hardware Vendor: innotek GmbH
+  Hardware Model: VirtualBox
+[root@altwks ~]# useradd -m testuser1
+[root@altwks ~]# useradd -m testuser2
+[root@altwks ~]# ls -la /home
+итого 20
+drwxr-xr-x  5 root      root      4096 мар 13 20:21 .
+drwxr-xr-x 24 root      root      4096 ноя 21 22:04 ..
+drwx-----x 21 sysadmin  sysadmin  4096 мар 13 19:15 sysadmin
+drwx-----x  8 testuser1 testuser1 4096 мар 13 20:21 testuser1
+drwx-----x  8 testuser2 testuser2 4096 мар 13 20:21 testuser2
+[root@altwks ~]# chage -l testuser1
+Последний раз пароль был изменён				: мар 13, 2024
+Срок действия пароля истекает					: никогда
+Пароль будет деактивирован через				: никогда
+Срок действия учётной записи истекает				: никогда
+Минимальное количество дней между сменой пароля			: -1
+Максимальное количество дней между сменой пароля		: -1
+Количество дней с предупреждением перед деактивацией пароля	: -1
+[root@altwks ~]# cat /etc/passwd | grep 'testuser*'
+testuser3:x:503:504::/home/testuser3:/bin/bash
+testuser1:x:504:506::/home/testuser1:/bin/bash
+testuser2:x:505:507::/home/testuser2:/bin/bash
+[root@altwks ~]# passwd -q testuser1
+passwd: invalid option -- 'q'
+Try `passwd --help' or `passwd --usage' for more information.
+[root@altwks ~]# passwd testuser1
+passwd: updating all authentication tokens for user testuser1.
+
+You can now choose the new password or passphrase.
+
+A valid password should be a mix of upper and lower case letters, digits, and
+other characters.  You can use a password containing at least 4 characters
+from at least 3 of these 4 classes.
+An upper case letter that begins the password and a digit that ends it do not
+count towards the number of character classes used.
+
+A passphrase should be of at least 3 words, 6 to 72 characters long, and
+contain enough different characters.
+
+Alternatively, if no one else can see your terminal now, you can pick this as
+your password: "desist=better*Kind".
+
+Enter new password:
+Re-type new password:
+passwd: all authentication tokens updated successfully.
+[root@altwks ~]# passwd -S testuser1
+Password set, yescrypt encryption.
+[root@altwks ~]#
+
+ЗАДАНИЕ2.1:
+root@astra:~# passwd -q testuser1
+Новый пароль :
+Повторите ввод нового пароля :
+passwd: пароль успешно обновлён
+root@astra:~# passwd -S testuser1
+testuser1 P 2024-03-13 0 99999 7 -1
+root@astra:~#
+root@astra:~# grep -Ev '^$|^#' /etc/pam.d/common-password
+password	requisite			pam_cracklib.so retry=3 minlen=8 difok=3
+password	[success=1 default=ignore]	pam_unix.so obscure use_authtok try_first_pass gost12_512
+password	requisite			pam_deny.so
+password	required			pam_permit.so
+password	optional	pam_gnome_keyring.so
+root@astra:~# grep -Ev '^$|^#' /etc/pam.d/common-password
+password	requisite			pam_cracklib.so retry=3 difok=3 gecoscheck reject_username minlen=9 lcredit=-1 ucredit=-1 dcredit=-1 ocredit=-1
+password	[success=1 default=ignore]	pam_unix.so obscure use_authtok try_first_pass gost12_512
+password	requisite			pam_deny.so
+password	required			pam_permit.so
+password	optional	pam_gnome_keyring.so
+root@astra:~# passwd testuser1
+Новый пароль :
+Повторите ввод нового пароля :
+passwd: пароль успешно обновлён
+root@astra:~# passwd -S testuser1
+testuser1 P 2024-03-13 0 99999 7 -1
+root@astra:~#
+
+ЗАДАНИЕ2.2:
+[root@altwks ~]# cat /etc/passwdqc.conf
+min=8,6,6,4,4
+max=72
+passphrase=3
+match=4
+similar=deny
+random=47
+enforce=users
+retry=3
+# The below are just examples, by default none of these are used
+#wordlist=/usr/share/john/password.lst
+#denylist=/etc/passwdqc.deny
+#filter=/opt/passwdqc/hibp.pwq
+[root@altwks ~]# mkdir /root/backup
+[root@altwks ~]# cp /etc/passwdqc.conf /root/backup/passwdqc.conf
+[root@altwks ~]# vim /etc/passwdqc.conf
+[root@altwks ~]# vim /etc/passwdqc.conf
+[root@altwks ~]# cat /etc/passwdqc.conf
+min=disabled,16,12,12,8
+max=72
+passphrase=3
+match=4
+similar=deny
+random=47
+enforce=everyone
+retry=3
+# The below are just examples, by default none of these are used
+#wordlist=/usr/share/john/password.lst
+#denylist=/etc/passwdqc.deny
+#filter=/opt/passwdqc/hibp.pwq
+[root@altwks ~]# id testuser1
+uid=504(testuser1) gid=506(testuser1) группы=506(testuser1)
+[root@altwks ~]# passwd
+passwd: cowardly refusing to change authentication tokens for user sysadmin.
+[root@altwks ~]# passwd testuser1
+passwd: updating all authentication tokens for user testuser1.
+
+You can now choose the new password or passphrase.
+
+A valid password should be a mix of upper and lower case letters, digits, and
+other characters.  You can use a password containing at least 8 characters
+from all of these classes, or a password containing at least 12 characters
+from just 3 of these 4 classes.
+An upper case letter that begins the password and a digit that ends it do not
+count towards the number of character classes used.
+
+A passphrase should be of at least 3 words, 12 to 72 characters long, and
+contain enough different characters.
+
+Alternatively, if no one else can see your terminal now, you can pick this as
+your password: "await7sector5Touch".
+
+Enter new password:
+Weak password: not enough different characters or classes for this length.
+Try again.
+
+You can now choose the new password or passphrase.
+
+A valid password should be a mix of upper and lower case letters, digits, and
+other characters.  You can use a password containing at least 8 characters
+from all of these classes, or a password containing at least 12 characters
+from just 3 of these 4 classes.
+An upper case letter that begins the password and a digit that ends it do not
+count towards the number of character classes used.
+
+A passphrase should be of at least 3 words, 12 to 72 characters long, and
+contain enough different characters.
+
+Alternatively, if no one else can see your terminal now, you can pick this as
+your password: "frock4Smart!onion".
+
+Enter new password:
+Re-type new password:
+passwd: all authentication tokens updated successfully.
+[root@altwks ~]# exit
+
+ЗАДАНИЕ3.1:
+root@astra:~# faillog -u testuser1
+Уч.запись      Неуд. попыток  Максимум  Последний раз
+
+testuser1       0        0   01/01/70 03:00:00 +0300
+root@astra:~# grep -Ev '^$|^#' /etc/pam.d/common-auth
+auth	[success=ignore default=2]	pam_localuser.so
+auth	[success=1 default=ignore]	pam_succeed_if.so quiet user ingroup astra-admin
+auth	[success=ignore default=die]	pam_tally.so per_user deny=8
+auth	[success=1 default=ignore]	pam_unix.so nullok_secure try_first_pass
+auth	requisite			pam_deny.so
+auth	required			pam_permit.so
+root@astra:~# grep -Ev '^$|^#' /etc/pam.d/common-auth
+auth	[success=ignore default=2]	pam_localuser.so
+auth	[success=1 default=ignore]	pam_succeed_if.so quiet user ingroup astra-admin
+auth	[success=ignore default=die]	pam_tally.so deny=3 lock_time=15
+auth	[success=1 default=ignore]	pam_unix.so nullok_secure try_first_pass
+auth	requisite			pam_deny.so
+auth	required			pam_permit.so
+root@astra:~#
+
+Пароль:
+root@astra:~# login -p testuser1
+Пароль:
+
+Неверное имя пользователя
+astra.testlab.lan имя пользователя: testuser1
+Учетная запись временно заблокирована (осталось 3 сек.)
+
+Неверное имя пользователя
+astra.testlab.lan имя пользователя: testuser1
+Учетная запись временно заблокирована (осталось 5 сек.)
+
+Неверное имя пользователя
+astra.testlab.lan имя пользователя: testuser1
+Учетная запись временно заблокирована (осталось 9 сек.)
+e
+Неверное имя пользователя
+astra.testlab.lan имя пользователя: ^C
+root@astra:~# faillog testuser1
+faillog: неожиданный параметр: testuser1
+Использование: faillog [параметры]
+
+Параметры:
+  -a, --all                     показать записи faillog для всех пользователей
+  -h, --help                    показать данное сообщение и закончить работу
+  -l, --lock-secs СЕК           заблокировать учётную запись после неудачных
+                                попытки входа на СЕК секунд
+  -m, --maximum МАКС             установить максимальное количество неудачных
+                                попыток входа равным МАКС
+  -r, --reset                   сбросить счётчик неудачных попыток входа
+  -R, --root КАТ_CHROOT         каталог, в который выполняется chroot
+  -t, --time ДНЕЙ               показать записи faillog за последнее
+                                количество ДНЕЙ
+  -u, --user ПОЛЬЗ/ДИАПАЗОН     показать записи faillog или отказы по счётчикам
+                                поддержки и ограничений (если используется
+                                с -r, -m или -l) только для указанного
+                                ПОЛЬЗОВАТЕЛЯ(ЕЙ)
+
+root@astra:~# faillog -u testuser1
+Уч.запись      Неуд. попыток  Максимум  Последний раз
+
+testuser1       5        0   03/13/24 23:12:28 +0300
+root@astra:~# faillog -u -r testuser1
+faillog: неизвестный пользователь или диапазон: -r
+root@astra:~# faillog -r -u testuser1
+root@astra:~# faillog -u testuser1
+Уч.запись      Неуд. попыток  Максимум  Последний раз
+
+testuser1       0        0   03/13/24 23:12:28 +0300
+root@astra:~# login -p testuser1
+Пароль:
+Последний вход в систему:Ср мар 13 23:10:04 MSK 2024на pts/0
+testuser1@astra:~$ exit
+выход
+root@astra:~# faillog -u testuser1
+Уч.запись      Неуд. попыток  Максимум  Последний раз
+
+testuser1       0        0   01/01/70 03:00:00 +0300
+root@astra:~#
+
+
+ЗАДАНИЕ3.2:
+???
+вероятно, надо лекцию вторую прослушать полностью
+???
+
+
+ЗАДАНИЕ4.1:
+root@astra:~# faillog -u testuser1
+Уч.запись      Неуд. попыток  Максимум  Последний раз
+
+testuser1       0        0   01/01/70 03:00:00 +0300
+root@astra:~# vim /etc/security/time.conf
+root@astra:~# vim /etc/security/time.conf
+root@astra:~# cat /etc/security/time.conf | grep 'testuser1'
+*;*;testuser1;WeFr1000-1130|Sa1800-2200|Su0900-200|MoTuTh08000-1000|MoTuTh2000-2130
+# *;*;testuser1;WeFr1000-1130|Sa1800-2200|Su0900-2000|MoTuTh0800-1000|MoTuTh2000-2130
+root@astra:~# vim /etc/pam.d/common-
+common-account                 common-password                common-session-noninteractive
+common-auth                    common-session
+root@astra:~# vim /etc/pam.d/common-login
+root@astra:~# cat /etc/pam.d/common-login
+account required pam_time.so
+root@astra:~#
+
+root@astra:~#
+root@astra:~# cat /etc/security/time.conf | grep 'testuser1'
+*;*;testuser1;WeFr1000-1130|Sa1800-2200|Su0900-200|MoTuTh08000-1000|MoTuTh2000-2130
+# *;*;testuser1;WeFr1000-1130|Sa1800-2200|Su0900-2000|MoTuTh0800-1000|MoTuTh2000-2130
+root@astra:~# cat /etc/pam.d/common-login
+#
+account         required        pam_time.so
+#
+root@astra:~#
+
+У Астры, видимо, настройка иначе прописывается в time.conf
+у меня в среду вечером, на Астре предложенный вариант не отработал.
+А на Альт, -- всё вполне себе.
+Зато, из Лабы не ясно, как посмотреть на Альт попытки входа неудачные, с ходу.
+
+
+ЗАДАНИЕ4.2:
+[sa@monitor ~]$ ssh sa@alt
+sa@alt's password:
+Permission denied, please try again.
+sa@alt's password:
+
+[sa@monitor ~]$ ssh sysadmin@alt
+sysadmin@alt's password:
+Last login: Wed Mar 13 20:00:05 2024 from 192.168.192.100
+[sysadmin@altwks ~]$ su -
+Password:
+[root@altwks ~]# vim /etc/pam.d/common-login
+[root@altwks ~]# cat /etc/pam.d/common-login
+#%PAM-1.0
+auth		substack	system-auth
+auth		substack	system-policy
+auth		required	pam_nologin.so
+account		substack	system-auth
+account		substack	system-policy
+account		required	pam_nologin.so
+password	include		system-auth
+password	include		system-policy
+session		substack	system-auth
+session		required	pam_loginuid.so
+-session	optional	pam_systemd.so
+session		substack	system-policy
+#
+account         required        pam_time.so
+[root@altwks ~]# vim /etc/security/time.conf
+[root@altwks ~]# cat /etc/security/time.conf | grep 'testuser1'
+*;*;testuser1;WeFr1000-1130|Sa1800-2200|Su0900-2000|MoTuTh0800-1000|MoTuTh2000-2130
+[root@altwks ~]# sync
+[root@altwks ~]# reboot
+[root@altwks ~]# Connection to alt closed by remote host.
+Connection to alt closed.
+[sa@monitor ~]$ ssh sysadmin@alt
+sysadmin@alt's password:
+Last login: Wed Mar 13 22:09:31 2024 from 192.168.192.100
+[sysadmin@altwks ~]$ su -
+Password:
+[root@altwks ~]# cat /home/testuser1/Docs/mypass.txt
+Sphere=mildew3Tying
+
+[root@altwks ~]#
+
+
+[sa@monitor ~]$ ssh testuser1@alt
+testuser1@alt's password:
+Connection closed by 192.168.92.234 port 22
+[sa@monitor ~]$ ssh testuser1@alt
+testuser1@alt's password:
+Connection closed by 192.168.92.234 port 22
+[sa@monitor ~]$
+
+ЗАДАНИЕ5.1:
+root@astra:~# cat /etc/pam.d/login | grep 'account'
+# account    requisite  pam_time.so
+account  required       pam_access.so
+# Standard Un*x account and session
+@include common-account
+account required pam_parsec_mac.so
+
+root@astra:~# cat /etc/security/access.conf | grep 'testuser1'
+-:testuser1:tty6
+
+ЗАДАНИЕ5.2:
+[root@altwks ~]# vim /etc/pam.d/system-auth-local-only
+[root@altwks ~]# cat /etc/pam.d/system-auth-local-only
+#%PAM-1.0
+auth		required	pam_tcb.so shadow fork nullok
+account		required	pam_tcb.so shadow fork
+password	required	pam_passwdqc.so config=/etc/passwdqc.conf
+password	required	pam_tcb.so use_authtok shadow fork nullok write_to=tcb
+session		required	pam_tcb.so
+#
+account		required	pam_access.so
+
+[root@altwks ~]# vim /etc/security/access.conf
+[root@altwks ~]# cat /etc/security/access.conf | grep 'testuser'
+-:testuser1:tty6
+[root@altwks ~]#
+
+В итоге, замучился искать, способ проверки tty6 в VirtualBox. Кажется, в Windows там есть виртуальная клавиатура. Но, либо этой возможности нет под AlmaLinux, на которой я держу рабочее место, либо надо установить расширения для VBox.
+
+ЗАДАНИЕ6:
+[root@altwks ~]# mii-tool enp0s3
+enp0s3: negotiated 100baseTx-FD, link ok
+[root@altwks ~]# whereis mii-tool
+mii-tool: /sbin/mii-tool /usr/share/man/man8/mii-tool.8.xz
+[root@altwks ~]# getcap /sbin/mii-tool
+[root@altwks ~]# ls -la /sbin/mii-tool
+-rwxr-xr-x 1 root root 27320 июн 28  2017 /sbin/mii-tool
+[root@altwks ~]# exit
+выход
+[sysadmin@altwks ~]$ mkdir Projects
+[sysadmin@altwks ~]$ cd Projects/
+[sysadmin@altwks Projects]$ cp /sbin/mii-tool ~/Projects/mii-tool
+[sysadmin@altwks Projects]$ ~/Projects/mii-tool
+SIOCGMIIPHY on 'eth0' failed: Operation not permitted
+SIOCGMIIPHY on 'eth1' failed: Operation not permitted
+SIOCGMIIPHY on 'eth2' failed: Operation not permitted
+SIOCGMIIPHY on 'eth3' failed: Operation not permitted
+SIOCGMIIPHY on 'eth4' failed: Operation not permitted
+SIOCGMIIPHY on 'eth5' failed: Operation not permitted
+SIOCGMIIPHY on 'eth6' failed: Operation not permitted
+SIOCGMIIPHY on 'eth7' failed: Operation not permitted
+no MII interfaces found
+[sysadmin@altwks Projects]$ setcap cap_net_admin+ep ~/Projects/mii-tool
+-bash: setcap: команда не найдена
+[sysadmin@altwks Projects]$ sudo setcap cap_net_admin+ep ~/Projects/mii-tool
+-bash: sudo: команда не найдена
+[sysadmin@altwks Projects]$ su -
+Password:
+[root@altwks ~]# cd /home/sysadmin/Projects/
+[root@altwks Projects]# setcap cap_net_admin+ep /home/sysadmin/Projects/mii-tool
+[root@altwks Projects]# exit
+выход
+[sysadmin@altwks Projects]$ ~/Projects/mii-tool
+no MII interfaces found
+[sysadmin@altwks Projects]$ ~/Projects/mii-tool
+enp0s3  lo
+[sysadmin@altwks Projects]$ ~/Projects/mii-tool enp0s3
+enp0s3: negotiated 100baseTx-FD, link ok
+[sysadmin@altwks Projects]$
+
+ЗАДАНИЕ7:
+Давно-давно, у afick был POSIX-аналог. Вроде бы, даже работал и под BSD и под Linux.
+Название забылось.
+
+root@astra:~# afick -i
+WARNING: (create) init on an already existing database : changes will be lost
+# Afick (2.11-1) init at 2024/03/14 00:50:34 with options (/etc/afick.conf):
+# database:=/var/lib/afick/afick
+# history:=/var/lib/afick/history
+# archive:=/var/lib/afick/archive
+# report_url:=stdout
+# allow_overload:=1
+# running_files:=1
+# timing:=1
+# exclude_suffix:= log LOG html htm HTM txt TXT xml hlp pod chm tmp old bak fon ttf TTF bmp BMP jpg JPG gif png ico wav WAV mp3 avi
+# max_checksum_size:=10000000
+# dbm:=GDBM_File
+
+
+# Hash database created successfully. 22599 files entered.
+# #################################################################
+# MD5 hash of /var/lib/afick/afick => JSn6Z+fDsJsqtLQWMSpqZw
+# user time : 11.51; system time : 5.69; real time : 94
+root@astra:~#
+root@astra:~# mkdir /root/backup
+root@astra:~# cp /bin/blkid /root/backup/blkid
+cp: не удалось выполнить stat для '/bin/blkid': Нет такого файла или каталога
+root@astra:~# cp /sbin/blkid /root/backup/blkid
+root@astra:~# cp /sbin/sysctl /root/backup/sysctl
+root@astra:~# echo asdf | sudo tee -a /sbin/blkid
+asdf
+root@astra:~# chmod 700 /sbin/sysctl
+root@astra:~# afick -k
+# Afick (2.11-1) compare at 2024/03/14 00:56:10 with options (/etc/afick.conf):
+# database:=/var/lib/afick/afick
+# history:=/var/lib/afick/history
+# archive:=/var/lib/afick/archive
+# report_url:=stdout
+# allow_overload:=1
+# running_files:=1
+# timing:=1
+# exclude_suffix:= log LOG html htm HTM txt TXT xml hlp pod chm tmp old bak fon ttf TTF bmp BMP jpg JPG gif png ico wav WAV mp3 avi
+# max_checksum_size:=10000000
+# dbm:=GDBM_File
+# last run on 2024/03/14 00:50:34 with afick version 2.11-1
+changed file : /usr/sbin/blkid
+changed file : /usr/sbin/sysctl
+
+# detailed changes
+changed file : /usr/sbin/blkid
+        md5                      : CFpXwFIjwqmyGYwYK0ukTg       zaQKi5IGycc4NPrfSM/oYA
+        filesize                 : 113264       113269
+        mtime                    : Thu Oct 26 14:17:07 2023     Thu Mar 14 00:55:44 2024
+changed file : /usr/sbin/sysctl
+        filemode                 : 100755       100700
+
+# Hash database : 22599 files scanned, 2 changed (new : 0; delete : 0; changed : 2; dangling : 0; exclude_suffix : 0; exclude_prefix : 0; exclude_re : 0; degraded : 3)
+# #################################################################
+# MD5 hash of /var/lib/afick/afick => JSn6Z+fDsJsqtLQWMSpqZw
+# user time : 10.07; system time : 2.99; real time : 13
+root@astra:~# cp /root/backup/sysctl /sbin/sysctl
+root@astra:~# cp /root/backup/blkid /sbin/blkid
+
