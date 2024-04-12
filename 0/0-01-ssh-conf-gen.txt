@@ -1,0 +1,54 @@
+// 0-00-github-conf-gen.txt -- Used for setup GitHub steps and operations for get and push some files from this service.
+// 0-01-ssh-conf-gen.txt -- Used for setup local ssh kripto keys, and push public key to hosts for remote configuration access.
+
+// Generating local ssh keys.
+jd@srv ~]$ cd ~/.ssh/
+[jd@srv .ssh]$ ssh-keygen -f ~/.ssh/my-work-ssh-key-rsa -t rsa -b 2048
+Generating public/private rsa key pair.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/jd/.ssh/my-work-ssh-key-rsa
+Your public key has been saved in /home/jd/.ssh/my-work-ssh-key-rsa.pub
+The key fingerprint is:
+SHA256:pnfKXQ1dMeBjsjXpwd58lpze7uU123123312wZBdD0aF84 jd@srv
+The key's randomart image is:
++---[RSA 2048]----+
+| =*=+|
+| oo*++|
+| . @=Eo|
+| B+X.=|
+| S .oo.@o|
+| o ++.o|
+| . . . . ooo|
+| o + . +.|
+| o . .+|
++----[SHA256]-----+
+[jd@srv .ssh]$
+
+// Save keys password for later usage.
+password=password?ETC
+
+// Copy generated ssh-public key to remote system via ssh-copy-id command to remote system jd@srv1
+
+ssh-copy-id jd@srv1
+>>enter jd account password.
+
+// Login to jd via installed ssh-key, may ask ssh-key password one time or not
+ssh jd@srv1
+Last login: Fri Apr  5 01:29:24 2024 from 192.168.x.x
+
+// For ALT we can remote login via public key added to /root/.ssh/authorized_keys
+su -
+cat /home/jd/.ssh/authorized_keys >> /root/.ssh/authorized_keys
+cat /root/.ssh/authorized_keys
+# OpenSSH authorized_keys file format is described in sshd(8) manual page.
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDW5ovDDlNLth6oKKtHwLf2xXCRFY8sDlWZuz9Mj5InBia1NN30ijhSPigVInnfegoiE6/jLfCy3ioWYKBaf9a5CV/J6DkJqi6MZ3NPQXiSSYJ6aSuCwdJj0JWQLPUCJr1W9u+T3hSHjJTY8o0123456789nvn5KlG/l9xzPIqjK7X8kndrrveI2cTsv6MLTqzVcJ5MW0g4PUH3fGB/Ynl3VJAoiFSzIeY5WtI/16+XCf1svvlewv/Kj3blxONP0eBDz56KAsxtwcewifA/wzmIAdyPP2Cc3wiKx9g9Oj8euXmDQUXy9HroNANSI+OZ3clxnQPq/UQ6KKtUqFQOpPFV+jQT0rFgjqrVYRgRFdojYQgz74mkZhgsZzvElYYGrgUY1G5XBHMLaWPI3ap/2jCtVbHsjiWQNHy2RJLzG4bXjDEc4TR0WAmJ1F0RS0E/PIAECRrm/PPI07rG1JNApWgwNNc+T1TEo0Y4m0123456789GGTIUpHssaVr+rle52Lk= jd@srv
+exit
+exit
+//Remote login to system via root
+ssh root@srv1
+[root@srv1 ~]#
+
+// Now we can apply setup recipes more quickly and efficiently.
+// We will use same puclic key for remote user and root logins.
+// This will be useful for Ansible tasks run.

@@ -1,0 +1,12 @@
+// Now we should have some remote accessible git account. Suppose this will be a github account with certain characteristics
+//. Login/Pass/Account Name/SSH_Public_Key/Access_Token
+//.
+//.
+//.
+//  .
+
+From DashBoard to Right-Top Corner >> Account Pic >> Settings >> Left Corner >> SSH and GPG Keys
+... add your SSH public key
+
+From DashBoard to Right-Top Corner >> Account Pic >> Settings >> Left Corner >> Developer Settings > Personal Access Tokens > Tokens (classic)
+Right Top Corner > Generate new token > Generate new token(classic)/For deneral use and THEN Describe OAuth-token settings for your needs

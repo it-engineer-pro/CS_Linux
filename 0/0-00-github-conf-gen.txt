@@ -1,0 +1,192 @@
+// https://docs.github.com/ru/authentication/connecting-to-github-with-ssh
+//
+// Generating local ssh keys for git-hub connection
+jd@srv ~]$ cd ~/.ssh/
+
+jd@srv ~]$ pwd
+/home/jd/.ssh
+
+// key setup procedure
+// https://docs.github.com/ru/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+//
+[jd@srv .ssh]$
+[jd@srv .ssh]$ ssh-keygen -t ed25519 -C "gitlab.jonedow@outlook.com"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/jd/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/jd/.ssh/id_ed25519.
+Your public key has been saved in /home/jd/.ssh/id_ed25519.pub.
+The key fingerprint is:
+SHA256:iTwBADnbVPUOBtoRZ6P1EO+gk0JP0OZjsGheCjqFBRU gitlab.jonedow@outlook.com
+The key's randomart image is:
++--[ED25519 256]--+
+|o=E=*oO.         |
+|o ++oO *         |
+| Oo=+ = +        |
+|=o+++= B .       |
+|=.+.=.+ S        |
+|oo . . .         |
+| .               |
+|                 |
+|                 |
++----[SHA256]-----+
+[jd@srv .ssh]$
+
+[jd@srv .ssh]$ ls -a
+.  ..  authorized_keys  authorized_keys~  config  id_ed25519  id_ed25519.pub  known_hosts  my-work-ssh-key-rjd  my-work-ssh-key-rjd.pub
+
+[jd@srv .ssh]$
+jd@srv .ssh]$ eval "$(ssh-agent -s)"
+Agent pid 15210
+[jd@srv .ssh]$ ssh-add ~/.ssh/id_ed25519
+Enter passphrase for /home/jd/.ssh/id_ed25519:
+Identity added: /home/jd/.ssh/id_ed25519 (gitlab.jonedow@outlook.com)
+[jd@srv .ssh]$
+
+
+
+// save keys password for later ujdge.
+// password=p@ssw0rd?ETC
+
+[jd@srv .ssh]$ ls -a
+.  ..  authorized_keys  authorized_keys~  config  my-work-ssh-key-rjd  my-work-ssh-key-rjd.pub
+[jd@srv .ssh]$
+
+// Now we should have some remote accessible git account. Suppose this will be a github account with certain characteristics
+//. Login/Pass/Account Name/SSH_Public_Key/Access_Token
+//.
+//.
+//.
+//  .
+// Setup ssh key in GitHub
+From DashBoard to Right-Top Corner >> Account Pic >> Settings >> Left Corner >> SSH and GPG Keys
+... add your SSH public key via New SSH key button
+   Title: ssh-access
+   Key Type: Authentication Key
+   Key: Begin wit 'ssh-rjd'...
+
+   cat id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIxfBD8ZRoXe1D7m5EvnqV+guC4iiFgGDDe2HJjrXehB gitlab.jonedow@outlook.com
+<<COPY>PASTE
+
+// Setup Access_Token in GitHub
+From DashBoard to Right-Top Corner >> Account Pic >> Settings >> Left Corner >> Down >> Developer Settings >> Personal Access Tokens >> Tokens (Classic) >> Generate New Token Button >> Generate new token (classic) >> add name for new token (ssh-access) amd put all or some check-boxes for describe access rigths for this token >> and expiration date (no more 1 year or shorter).
+
+// check access to GitHub via ssh (ssh-eval must be added before)
+jd@srv .ssh]$ ssh -T git@github.com
+Hi jonedow! You've successfully authenticated, but GitHub does not provide shell access.
+
+// Now create work GitHub repo for yuor project
+Top-Right Corner >> Your Account Picture >> Your Repostories >> Right >> New >> Owner(UserName)/Repository name >> CSLinux >> Green 'CSLinux is available.'>> Down Right >> Create Repository
+// Now we have repo for sync project files via GitHub cloud service.
+// Repo name for access via  SSH  is: git@github.com:jonedow/CSLinux.git
+// Repo name for access via HTTPs is: https://github.com/jonedow/CSLinux.git
+// This step we have dome while we can't make some tasks remotelly, GitHub suggests us about it in welcome mesjdge when we test access.
+// Hi jonedow! You've successfully authenticated, but GitHub does not provide shell access.
+// Hi jonedow! You've successfully authenticated, >>but GitHub does not provide shell access.<<
+// But we can see two trick for first steps in the repo page: https://github.com/jonedow/CSLinux
+//
+// …or create a new repository on the command line
+// echo "# CSLinux" >> README.md
+// git init
+// git add README.md
+// git commit -m "first commit"
+// git branch -M main
+// git remote add origin https://github.com/jonedow/CSLinux.git
+// git push -u origin main
+// …or push an existing repository from the command line
+// git remote add origin https://github.com/jonedow/CSLinux.git
+// git branch -M main
+// git push -u origin main
+//
+// So, we use own variant.
+
+// Now I prefer make 'Projects' folder in HOME directory and _GH_ folder for creating replicas from GitHub.
+[jd@srv .ssh]$ mkdir -p ~/Projects/_GH_
+[jd@srv .ssh]$ cd ~/Projects/_GH_
+
+// Now we must add local git binaries.
+// Setup steps for some work host
+su -
+apt-get update
+apt-get dist-upgrade
+apt-get install git
+exit
+
+// In user mode
+git help
+cd ~/Projects/_GH_
+[jd@srv _GH_]$ git config --global user.name "Victor.jonedow"
+[jd@srv _GH_]$ git config --global user.email gitlab.jonedow@outlook.com
+
+// Clone remote GitHub repository to local ~/Projects/_GH_ folder and go into cloned CSLinux project
+[jd@srv _GH_]$ git clone git@github.com:jonedow/CSLinux.git
+[jd@srv _GH_]$ git clone git@github.com:jonedow/CSLinux.git
+Cloning into 'CSLinux'...
+remote: Enumerating objects: 4, done.
+remote: Counting objects: 100% (4/4), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 4 (delta 0), reused 0 (delta 0), pack-reused 0
+Receiving objects: 100% (4/4), done.
+[jd@srv _GH_]$ cd CSLinux[jd@srv CSLinux]$ ls -a
+.  ..  .git  LICENSE  README.md
+[jd@srv CSLinux]$
+
+[jd@alt-root CSLinux]$ cat README.md
+# CSLinux
+CSLinux is available.
+[jd@alt-root CSLinux]$ cat LICENSE
+BSD 2-Clause License
+
+Copyright (c) 2024, jonedow
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+[jd@alt-root CSLinux]$
+
+// Check usual operations on local hosts corner with remote GitHub git-cloud service.
+
+touch tricks.txt
+touch tips.txt
+mkdir LABs
+touch LABs/test.txt
+git add --all LABs/*
+git commit -m "add LABs folder"
+git push
+...
+[jd@srv CSLinux]$ touch LABs/test2.txt
+[jd@srv CSLinux]$ git add --all LABs/*
+[jd@srv CSLinux]$ git commit -m "add LABs folder and two notes"
+[main e80967b] add LABs folder and two notes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 LABs/test2.txt
+
+[jd@alt-root CSLinux]$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 330 bytes | 330.00 KiB/s, done.
+Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To github.com:jonedow/CSLinux.git
+   b1dfdd4..e80967b  main -> main
+[jd@srv CSLinux]$
