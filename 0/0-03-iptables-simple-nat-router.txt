@@ -69,6 +69,7 @@ iptables -A FORWARD -i enp0s3 -o enp0s8 -m state --state ESTABLISHED,RELATED -j 
 
 echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
 sysctl -p
+sysctl -w net.ipv4.ip_forward=1
 
 =======================================================================================================================
 Выполняем сохранение полученных настроек для NetFilter посредством iptables, через утилиту iptables-save:
