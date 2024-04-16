@@ -1,4 +1,5 @@
 Some exercises around local security control tools in AstraLinux and ALTLinux enviroments.
+It't all about PAM components for Linux security controls and checking it in usual comformed way.
 
 ЗАДАНИЕ1.1:
 root@astra:~# sudo su -
