@@ -1,0 +1,413 @@
+BASE LAN SETUP for deploing any required changes.
+Test enviroment consists with four servers:
+1. AS0. -- GW ROUTER. With simple setup. Unbound/Chrony/simle_iptables_routing(SNAT).
+2. AS1. -- Local Infrastructure Server. Master. testlab.lan. Bind. DHCP1.
+3. AS2. -- Local Infrastructure Server. Slave. testlab.lan. Bind. DHCP2.
+4. AS3. -- Local Infrastructure Server. Subordinate Delegated Domain. office.testlab.lan. Bind. DynDNS.
+And two example workstations:
+5. AW1.office.testlab.lan.
+6. AW2.office.testlab.lan.
+etc.
+
+**************
+ssh-copy-id -i ~/.ssh/redos-key-rsa.pub sa@as0
+su -
+[root@as0 ~]# cat /home/sa/.ssh/authorized_keys >> /root/.ssh/authorized_keys
+
+**************
+ssh root@as0
+
+ip a
+
+hostnamectl
+hostnamectl hostname as0.testlab.lan
+hostnamectl icon-name AS0
+
+ls /etc/net/ifaces
+
+mkdir /root/backup
+mkdir /etc/net/ifaces/enp0s9
+
+cat > /etc/net/ifaces/enp0s9/ipv4address <<<'192.168.95.10/24'
+cat > /etc/net/ifaces/enp0s9/ipv4route <<<'default via 192.168.92.11'
+cat > /etc/net/ifaces/enp0s9/resolv.conf <<<'nameserver 192.168.92.11
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s9/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+echo 'net.ipv4.ip_forward = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+apt-get install unbound chrony wget bind-utils
+
+cat /etc/unbound/unbound.conf > /root/backup/unbound.conf.backup
+cat /etc/chrony.conf > /root/backup/chrony.conf.backup
+
+cat > /etc/chrony.conf <<<'pool ru.pool.ntp.org iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+minsources 2
+allow 192.168.195.0/24
+local stratum 10
+ntsdumpdir /var/lib/chrony
+logdir /var/log/chrony
+log measurements statistics tracking'
+
+systemctl restart chronyd.service
+chronyc activity
+
+wget -S https://www.internic.net/domain/named.cache -O /etc/unbound/root.hints
+cp /etc/unbound/root.hints /var/lib/unbound/root.hints
+
+cat > /etc/unbound/unbound.conf <<<'server:
+        interface: 192.168.195.10
+        port: 53
+        outgoing-interface: 192.168.92.95
+        prefer-ip4: yes
+        do-ip4: yes
+        do-ip6: no
+        do-nat64: no
+        do-udp: yes
+        do-daemonize: yes
+        access-control: 127.0.0.0/8 allow
+        access-control: 192.168.195.0/24 allow
+        pidfile: "/run/unbound/unbound.pid"
+        root-hints: "/var/lib/unbound/root.hints"
+        hide-identity: no
+        hide-version: no
+        identity: "Unbound"
+        private-address: 192.168.195.0/24
+        private-domain: "testlab.lan"
+        do-not-query-address: 127.0.0.1/8
+        do-not-query-localhost: yes
+        prefetch: no
+        auto-trust-anchor-file: "/var/lib/unbound/root.key"
+python:
+dynlib:
+remote-control:
+        control-enable: yes
+        control-interface: 127.0.0.1
+        control-port: 8953
+forward-zone:
+      name: "."
+      forward-addr: 192.168.92.11
+#      forward-addr: 8.8.8.8
+      forward-first: no
+      forward-no-cache: no'
+
+systemctl enable --now unbound.service
+systemctl restart unbound.service
+
+systemctl status iptables.service
+iptables -nvL
+iptables-save > /etc/sysconfig/iptables
+
+/sbin/iptables -P INPUT ACCEPT
+/sbin/iptables -P OUTPUT ACCEPT
+/sbin/iptables -P FORWARD ACCEPT
+
+/sbin/iptables -t nat -A POSTROUTING -s 192.168.195.0/24 -d 0/0 -o enp0s3 -j SNAT --to-source 192.168.92.95
+/sbin/iptables -t nat -A POSTROUTING -s 192.168.95.0/24 -d 0/0 -o enp0s3 -j SNAT --to-source 192.168.92.95
+
+/sbin/iptables -A FORWARD -i enp0s8 -o enp0s3 -s 192.168.95.0/24 -j ACCEPT
+/sbin/iptables -A FORWARD -i enp0s10 -o enp0s3 -s 192.168.195.0/24 -j ACCEPT
+
+/sbin/iptables -A FORWARD -i enp0s3 -o enp0s8 -m state --state ESTABLISHED,RELATED -j ACCEPT
+/sbin/iptables -A FORWARD -i enp0s3 -o enp0s10 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+systemctl enable --now iptables
+systemctl status iptables
+iptables -nvL
+iptables-save > /etc/sysconfig/iptable
+
+**************
+sa/as1
+su -
+mkdir /root/backup
+ip a
+ls -la /etc/net/ifaces/enp0s10
+touch /etc/net/ifaces/enp0s10/ipv4address
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.1/24'
+systemctl restart network
+exit
+
+sa/as0
+ssh-keygen -f ~/.ssh/access-key-rsa -t rsa -b 2048
+ssh-copy-id -i ~/.ssh/access-key-rsa.pub sa@as1
+
+sa@as1
+su -
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.1/24'
+cat > /etc/net/ifaces/enp0s10/ipv4route <<<'default via 192.168.195.10'
+cat > /etc/net/ifaces/enp0s10/resolv.conf <<<'nameserver 192.168.195.10
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s10/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+mkdir /root/backup
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+hostnamectl
+hostnamectl hostname as1.testlab.lan
+hostnamectl icon-name AS1
+
+apt-get install chrony wget bind-utils nano
+
+cp /etc/chrony.conf /root/backup/chrony.conf
+cat > /etc/chrony.conf <<<'server 192.168.195.10 iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+allow 192.168.195.0/24
+local stratum 10
+ntsdumpdir /var/lib/chrony
+logdir /var/log/chrony
+log measurements statistics tracking'
+systemctl enable --now chronyd
+systemctl status chronyd
+chronyc sources
+**************
+sa@as2
+su -
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.2/24'
+systemctl restart network
+
+sa@as0
+su -
+ssh-copy-id -i ~/.ssh/access-key-rsa.pub sa@as2
+
+cat > /etc/net/ifaces/enp0s10/ipv4route <<<'default via 192.168.195.10'
+cat > /etc/net/ifaces/enp0s10/resolv.conf <<<'nameserver 192.168.195.10
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s10/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+
+mkdir /root/backup
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+hostnamectl
+hostnamectl hostname as2.testlab.lan
+hostnamectl icon-name AS2
+
+apt-get install chrony wget bind-utils nano
+
+cp /etc/chrony.conf /root/backup/chrony.conf
+cat > /etc/chrony.conf <<<'server 192.168.195.10 iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+allow 192.168.195.0/24
+local stratum 10
+ntsdumpdir /var/lib/chrony
+logdir /var/log/chrony
+log measurements statistics tracking'
+systemctl enable --now chronyd
+systemctl status chronyd
+chronyc sources
+
+**************
+sa@as3
+su -
+
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.13/24'
+systemctl restart network
+exit
+
+sa@as0
+su -
+ssh-copy-id -i ~/.ssh/access-key-rsa.pub sa@as3
+
+cat > /etc/net/ifaces/enp0s10/ipv4route <<<'default via 192.168.195.10'
+cat > /etc/net/ifaces/enp0s10/resolv.conf <<<'nameserver 192.168.195.10
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s10/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+
+mkdir /root/backup
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+hostnamectl
+hostnamectl hostname as3.testlab.lan
+hostnamectl icon-name AS3
+
+apt-get install chrony wget bind-utils nano
+
+cp /etc/chrony.conf /root/backup/chrony.conf
+cat > /etc/chrony.conf <<<'server 192.168.195.10 iburst
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+allow 192.168.195.0/24
+local stratum 10
+ntsdumpdir /var/lib/chrony
+logdir /var/log/chrony
+log measurements statistics tracking'
+systemctl enable --now chronyd
+systemctl status chronyd
+chronyc sources
+
+**************
+sa@aw1
+su -
+
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.11/24'
+cat > /etc/net/ifaces/enp0s10/options <<<'NM_CONTROLLED=no'
+systemctl restart network
+systemctl enable --now sshd
+
+sa@aw1
+ssh-copy-id -i ~/.ssh/access-key-rsa.pub sa@aw1
+
+ssh sa@aw1
+su -
+
+cat > /etc/net/ifaces/enp0s10/ipv4route <<<'default via 192.168.195.10'
+cat > /etc/net/ifaces/enp0s10/resolv.conf <<<'nameserver 192.168.195.10
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s10/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+reboot
+
+mkdir /root/backup
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+hostnamectl
+hostnamectl hostname aw1.testlab.lan
+hostnamectl icon-name AW1
+
+apt-get install wget bind-utils nano
+
+**************
+sa@aw2
+su -
+
+cat > /etc/net/ifaces/enp0s10/ipv4address <<<'192.168.195.12/24'
+cat > /etc/net/ifaces/enp0s10/options <<<'NM_CONTROLLED=no'
+systemctl restart network
+sys
+
+sa@as0
+ssh-copy-id -i ~/.ssh/access-key-rsa.pub sa@aw2
+
+ssh sa@aw2
+su -
+
+cat > /etc/net/ifaces/enp0s10/ipv4route <<<'default via 192.168.195.10'
+cat > /etc/net/ifaces/enp0s10/resolv.conf <<<'nameserver 192.168.195.10
+search testlab.lan'
+cat > /etc/net/ifaces/enp0s10/options <<<'BOOTPROTO=static
+TYPE=eth
+CONFIG_WIRELESS=no
+SYSTEMD_BOOTPROTO=static
+CONFIG_IPV4=yes
+DISABLED=no
+NM_CONTROLLED=no
+SYSTEMD_CONTROLLED=no'
+reboot
+
+mkdir /root/backup
+cp /etc/hosts /root/backup/hosts
+cat > /etc/hosts <<<'127.0.0.1 localhost.localdomain localhost
+192.168.195.10 as0.testlab.lan as0
+192.168.195.1 as1.testlab.lan as1
+192.168.195.2 as2.testlab.lan as2
+192.168.195.13 as3.testlab.lan as3
+192.168.195.11 aw1.testlab.lan aw1
+192.168.195.12 aw2.testlab.lan aw2'
+
+echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/net/sysctl.conf
+sysctl -f
+systemctl restart network.service
+
+hostnamectl
+hostnamectl hostname aw2.testlab.lan
+hostnamectl icon-name AW2
+
+apt-get install wget bind-utils nano
+
