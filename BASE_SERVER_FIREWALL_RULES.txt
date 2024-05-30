@@ -1,2 +1,253 @@
+#!/bin/bash
+########################################################################
+# BASE INFRASTRUCTURE SERVER FIREWALL TEMPLATE
+# with SOME BASE and parameterization for easy and quick setup and rebase settings.
+# Additional tuning and evolution I'll publish in this repo
+# git@github.com:it-engineer-pro/FireWalling.git
+########################################################################
+# PROTECTED SERVICES PLANE:
+# IDSSVS_LAN:192.168.195.0/24 (INT_IF)
+# enp0s10/195.XX
+# /etc/net/ifaces/enp0s10
+########################################################################
 
+########################################################################
+#
+# Aliaces and shortcuts
+#
+CON_TRAC="1"                             # Not used.
+SSH_SERVER="1"                           # Not used.
+FTP_SERVER="0"                           # Not used.
+WEB_SERVER="0"                           # Not used.
+SSL_SERVER="0"                           # Not used.
+DHCP_SERVER="1"                          # Not used.
+DNS_SERVER="1"                           # Not used.
+IPT="/sbin/iptables"                     # Location of iptables on your system.
+NEW="--ctstate NEW"                      #
+NES="--ctstate NEW,ESTABLISHED"          #
+NER="--ctstate NEW,ESTABLISHED,RELATED"  #
+ESR="--ctstate ESTABLISHED,RELATED"      #
+EST="--ctstate ESTABLISHED"              #
+#LPB_IF="lo"                             # Local Network Interface. Not Acceptable Now.
+                                         # Use lo
+LPB_SN="127.0.0.0/8"                     # Reserved loopback address range.
+BCST_SRC_NET="0.0.0.0/8"                 # Can't be blocked unilaterally with DHCP.
+LINK_LCL="169.254.0.0/16"                # Link Local Network.
+TEST_NET="192.0.2.0/24"                  # TEST-NET.
+BCST_SRC="0.0.0.0"                       # Broadcast source address.
+BCST_DEST="255.255.255.255"              # Broadcast destination address.
+WTCP_PRTS="1:1024"                       # Well-known, privileged port range. TCP.
+WUDP_PRTS="0:1024"                       # Well-known, privileged port range. UDP.
+RGST_PRTS="105:49151"                    # Registered, privileged port range.
+DYNC_PRTS="49152:65535"                  # Dynamic, unprivileged port range.
+UNPR_PRTS="1025:65535"                   # Unprivileged port range.
+#
+SRV_IF="enp0s10"                         # Internal interface.
+SRV_IPS="192.168.195.1/24"               # Internal Interface IP address with SubNet..
+SRV_SN="192.168.195.0/24"                # Internal Subnet.
+SRV_BR="192.168.195.255/24"              # Internal Subnet Broadcast.
+SRV_IP="192.168.195.1"                   # Internal Interface IP address/NoSN.
+SRV_RN="192.168.195.11-192.168.110.12"   # INT GW IP addresses.
+#
+INT_GW_IP="192.168.110.11"               # Internal Interface IP address/NoSN.
+#
+# traceroute usually uses -S 32769:65535 -D 33434:33523
+TRCRT_SRC_PORTS="32769:65535"            # Traceroute source ports.
+TRCRT_DST_PORTS="33434:33523"            # Traceroute destination ports.
+SQUID_PORT="3128"                        #
+#
+NS1="192.168.195.10"                     # Address of our local name server (Unbound at GW).
+NS2="8.8.8.8"                            # Address of a remote name server.(Valid for debugging)
+POP_SRV="192.168.120.11"                 # Address of a remote pop server.
+MAIL_SRV="192.168.120.11"                # Address of a remote mail gateway.
+TIME_SRV="192.168.110.11"                # Address of a remote time server.
+SSH_CLI1="192.168.195.10"                # Remote Support IP address.
+SSH_LCLP="22"                            # _LOCAL_SSHD_ port for remote
+#                                        # support access.
+SSH_STDP="22"                            # Standard SSH-Port.
+#                                        # ALTerator access.
+ATLS_STDP="8080"                         # Standard Alterator-Port.
+BIND_PORT="53"                           # 53/udp for requests, 53/tpc for zone transfer.
+BIND_MNGMNT_PORT="953"                   # 953/tcp
+MY_VLAN_A="192.168.195.0/24"             # Serviced VLAN A.
+DNS_RN="192.168.195.1,192.168.110.2"     # INT GW IP addresses.
+DNS_DELEG="192.168.195.13"               # office.testlab.lan. NS3.
+UNB_RES="192.168.195.10"                 # Unbound Resolving Filter. NS0.
+LOCAL_ADNIN="192.168.195.10"             # Local Support IP address.
+NTP_PORT="123"                           # Chronyc Services.
 
+########################################################################
+
+########################################################################
+# Reset All Rules
+########################################################################
+/sbin/iptables -F
+/sbin/iptables -X
+/sbin/iptables -Z
+/sbin/iptables -t nat -F
+/sbin/iptables -t nat -X
+/sbin/iptables -t mangle -F
+/sbin/iptables -t mangle -X
+/sbin/iptables -t raw -F
+/sbin/iptables -t raw -X
+/sbin/iptables --flush
+/sbin/iptables --table nat --flush
+/sbin/iptables --delete-chain
+/sbin/iptables --table nat --delete-chain
+
+########################################################################
+# Default Policy Drop
+#
+$IPT -P INPUT DROP
+$IPT -P FORWARD DROP
+$IPT -P OUTPUT DROP
+########################################################################
+
+#
+# LocalHost Allow
+#
+$IPT -A INPUT -i lo --source 127.0.0.1 --destination 127.0.0.1 -j ACCEPT
+
+#
+# Allow Est/Rel
+#
+$IPT -t filter -A INPUT -p tcp -m conntrack $ESR -j ACCEPT
+$IPT -t filter -A OUTPUT -p tcp -m conntrack $ESR -j ACCEPT
+$IPT -t filter -A FORWARD -p tcp -m conntrack $ESR -j ACCEPT
+
+#
+# Remote Control Rules (tcp/22 >> ssh/2220 external/DMZ port access)
+# From Remote Support and Local DMZ JH Server
+#
+$IPT -A INPUT -p tcp -s $SSH_CLI1 --sport $UNPR_PRTS -d $SRV_IP \
+              --dport $SSH_LCLP -m conntrack $NES -i $SRV_IF -j ACCEPT
+$IPT -A OUTPUT -p tcp -s $SRV_IP --sport $SSH_LCLP -d $SSH_CLI1 \
+              --dport $UNPR_PRTS -m conntrack $ESR  -o $SRV_IF -j ACCEPT
+
+#
+# ICMP Admin Host 1.
+#
+$IPT -A INPUT -s $SSH_CLI1 -p icmp --icmp-type echo-request -i $SRV_IF -d $SRV_IP -m conntrack $NES -j ACCEPT
+$IPT -A OUTPUT -s $SRV_IP -p icmp --icmp-type destination-unreachable -o $SRV_IF -d $SSH_CLI1 -m conntrack $ESR -j ACCEPT
+$IPT -A OUTPUT -s $SRV_IP -p icmp --icmp-type time-exceeded  -o $SRV_IF -d $SSH_CLI1 -m conntrack $ESR -j ACCEPT
+$IPT -A OUTPUT -s $SRV_IP -p icmp --icmp-type echo-reply -o $SRV_IF -d $SSH_CLI1 -m conntrack $ESR -j ACCEPT
+
+#
+# ICMP Out to MNGMNT Host
+#
+$IPT -A OUTPUT -p icmp --icmp-type echo-request -o $SRV_IF -s $SRV_IP -d $SSH_CLI1 -m conntrack $NES -j ACCEPT
+$IPT -A INPUT -p icmp --icmp-type destination-unreachable -s $SSH_CLI1 -i $SRV_IF -d $SRV_IP -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p icmp --icmp-type time-exceeded -s $SSH_CLI1 -i $SRV_IF -d $SRV_IP -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p icmp --icmp-type echo-reply -s $SSH_CLI1 -i $SRV_IF -d $SRV_IP -m conntrack $ESR -j ACCEPT
+
+#
+# Access to external services from localhost (i.e. GW it-self)
+# Updates and DNS/udp and NTP/udp packets.
+#
+$IPT -A OUTPUT -p udp -s $SRV_IP --sport $UNPR_PRTS -d $NS1 \
+               --match multiport --dports 53,123 -m conntrack $NES -o $SRV_IF -j ACCEPT
+$IPT -A INPUT -p udp --sport 53 -s $NS1 -d $SRV_IP -i $SRV_IF \
+              --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p udp --sport 123 -s $NS1 -d $SRV_IP -i $SRV_IF \
+              --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $UNPR_PRTS -o $SRV_IF -s $SRV_IP \
+               --match multiport --dports 80,443 --syn -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $UNPR_PRTS -o $SRV_IF -s $SRV_IP \
+               --match multiport --dports 80,443 -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p tcp --dport $UNPR_PRTS -d $SRV_IP \
+              --match multiport --sports 80,443 -m conntrack $ESR -i $SRV_IF -j ACCEPT
+#
+
+##########################################################################################################
+# Local Bind Rules:
+#
+#BIND_PORT="53"                           # 53/udp for requests, 53/tpc for zone transfer.
+#BIND_MNGMNT_PORT="953"                   # 953/tcp
+#MY_VLAN_A="192.168.195.0/24"             # Serviced VLAN A.
+#DNS_RN="192.168.195.1-192.168.110.2"     # INT GW IP addresses.
+#DNS_DELEG="192.168.195.13"               # office.testlab.lan. NS3.
+#UNB_RES="192.168.195.10"                 # Unbound Resolving Filter. NS0.
+#LOCAL_ADNIN="192.168.195.10"             # Local Support IP address.
+#
+# DNS Requests from VLAN_A.
+$IPT -A INPUT -p udp --sport $UNPR_PRTS -s $MY_VLAN_A -i $SRV_IF -d $SRV_IP --dport $BIND_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p udp --sport $BIND_PORT -s $SRV_IP -o $SRV_IF -d $MY_VLAN_A --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+# Bind Requests to local upstream resolver.
+$IPT -A OUTPUT -p udp --sport $UNPR_PRTS -s $SRV_IP  -o $SRV_IF -d $UNB_RES --dport $BIND_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A INPUT -p udp --sport $BIND_PORT -s $UNB_RES -i $SRV_IF -d $SRV_IP --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+# DNS Requests for zone transfer.
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS -s $DNS_RN -i $SRV_IF -d $SRV_IP --dport $BIND_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $BIND_PORT -s $SRV_IP -o $SRV_IF -d $DNS_RN --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS -s $DNS_DELEG -i $SRV_IF -d $SRV_IP --dport $BIND_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $BIND_PORT -s $SRV_IP -o $SRV_IF -d $DNS_DELEG --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+# Bind Mngmnt. -i lo --source 127.0.0.1
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS -s $LOCAL_ADNIN -i $SRV_IF -d $SRV_IP --dport $BIND_MNGMNT_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS --source 127.0.0.1 -i $SRV_IF -d $SRV_IP --dport $BIND_MNGMNT_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $BIND_MNGMNT_PORT -s $SRV_IP -o $SRV_IF -d $LOCAL_ADNIN --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $BIND_MNGMNT_PORT -s $SRV_IP -o $SRV_IF -d 127.0.0.1 --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+
+##########################################################################################################
+# Local DHCP Server Rules:
+# 519/520/7911/647
+$IPT -I INPUT -p udp -s $BCST_SRC --sport 67:68 -i $SRV_IF -d $BCST_DEST --dport 67:68 -m conntrack $NEW -j ACCEPT
+$IPT -I OUTPUT -p udp -o $SRV_IF -s $SRV_IP --sport 67:68 --dport 67:68 -j ACCEPT
+# DNS/DCHP in same servers.
+$IPT -I INPUT -p udp -s $DNS_RN --match multiport --sports 519,520,7911,647 -i $SRV_IF -m conntrack $NEW -j ACCEPT
+$IPT -I OUTPUT -p udp -d $DNS_RN --match multiport --dports 519,520,7911,647 -o $SRV_IF -m conntrack $NEW -j ACCEPT
+$IPT -I INPUT -p tcp -s $DNS_RN --match multiport --sports 519,520,7911,647 -i $SRV_IF -m conntrack $NEW -j ACCEPT
+$IPT -I OUTPUT -p tcp -d $DNS_RN --match multiport --dports 519,520,7911,647 -o $SRV_IF -m conntrack $NEW -j ACCEPT
+
+##########################################################################################################
+# ALTerator Access Rules:
+#
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS -s $LOCAL_ADNIN -i $SRV_IF -d $SRV_IP --dport $ATLS_STDP -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --sport $ATLS_STDP -s $SRV_IP -o $SRV_IF -d $LOCAL_ADNIN --dport $UNPR_PRTS -m conntrack $ESR -j ACCEPT
+
+##########################################################################################################
+# Local Other Server Services Rules:
+#
+$IPT -A INPUT -p tcp --sport $UNPR_PRTS -s $MY_VLAN_A  -i $SRV_IF -d $SRV_IP --match multiport --dports $SSH_STDP,$ATLS_STDP -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p tcp --match multiport --sports $SSH_STDP,$ATLS_STDP -s $SRV_IP -o $SRV_IF -d $MY_VLAN_A -m conntrack $ESR -j ACCEPT
+$IPT -A INPUT -p udp --sport $UNPR_PRTS -s $MY_VLAN_A  -i $SRV_IF -d $SRV_IP --match multiport --dports $NTP_PORT,$BIND_PORT -m conntrack $NEW -j ACCEPT
+$IPT -A OUTPUT -p udp --match multiport --sports $NTP_PORT,$BIND_PORT -s $SRV_IP -o $SRV_IF -d $MY_VLAN_A -m conntrack $ESR -j ACCEPT
+
+#
+# Logging Policies
+#
+$IPT -N LOGGING
+$IPT -A OUTPUT -j LOGGING
+$IPT -A FORWARD -j LOGGING
+$IPT -A INPUT -j LOGGING
+$IPT -A LOGGING -m limit --limit 600/min -j LOG --log-prefix "IPT-Logging: " --log-level 7
+$IPT -A INPUT -j LOG --log-level 4 --log-prefix '_IPT_IN_ '
+$IPT -A OUTPUT -j LOG --log-level 4 --log-prefix '_IPT_OUT_ '
+
+# TEMPLATE for quick RULES.
+#$IPT -A INPUT -p tcp -i $DMZ_IF -s $DMZ_SN \
+#              --sport $DYNC_PRTS --dport $RGST_PRTS \
+#              -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+#$IPT -A OUTPUT -o $DMZ_IF -d $DMZ_SN \
+#             --dport $DYNC_PRTS --sport $DYNC_PRTS \
+#             -m state --state ESTABLISHED,RELATED -j ACCEPT
+#$IPT -A INPUT -p tcp --dport $UNPR_PRTS -d $SRV_IP \
+#              --match multiport --sports 80,443 -m conntrack $ESR -i $SRV_IF -j ACCEPT
+########################################################################
+# Define custom chain _LOG_DROP_ for log dropped packets.
+#
+$IPT -N _LOG_DROP_
+$IPT -A _LOG_DROP_ -m limit --limit 10/min -j LOG --log-prefix "IPT-LogDrop: " --log-level 7
+$IPT -A _LOG_DROP_ -j DROP
+#$IPT -A LOGGING -j REJECT
+#
+#
+# mkdir /etc/sysconfig/_iptables
+# cd /etc/sysconfig/_iptables
+# touch _iptables_run_.sh
+# save as _iptables_run_.sh
+# nano ctrl+shift+V, ctcl+o, ctcl+x
+# chmod +x _iptables_run_.sh
+# if all going rights run
+# iptables -nvL --line-numbers
+# journalctl -a | grep IPT ... etc
+# iptables-save > /etc/sysconfig/iptables
+#
