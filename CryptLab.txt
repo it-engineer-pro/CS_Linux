@@ -1,0 +1,427 @@
+[sa@monitor ~]$ ssh sysadmin@altwks
+Last login: Tue Apr 16 21:03:16 2024 from 192.168.192.100
+[sysadmin@altwks ~]$ su -
+Password: 
+[root@altwks ~]# lsblk | grep sdb
+sdb      8:16   0   20G  0 disk 
+[root@altwks ~]# fdisk /dev/sdb
+
+Добро пожаловать в fdisk (util-linux 2.39.2).
+Изменения останутся только в памяти до тех пор, пока вы не решите записать их.
+Будьте внимательны, используя команду write.
+
+Устройство не содержит стандартной таблицы разделов.
+Created a new DOS (MBR) disklabel with disk identifier 0x8ca09b31.
+
+Команда (m для справки): n
+Тип раздела
+   p   основной (0 primary, 0 extended, 4 free)
+   e   расширенный (контейнер для логических разделов)
+Выберите (по умолчанию - p):p
+Номер раздела (1-4, default 1): 
+Первый сектор (2048-41943039, default 2048): 
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-41943039, default 41943039): 
+
+Создан новый раздел 1 с типом 'Linux' и размером 20 GiB.
+
+Команда (m для справки): w
+Таблица разделов была изменена.
+Вызывается ioctl() для перечитывания таблицы разделов.
+Синхронизируются диски.
+
+[root@altwks ~]# lsblk | grep sdb
+sdb      8:16   0   20G  0 disk 
+└─sdb1   8:17   0   20G  0 part 
+[root@altwks ~]# lsblk | grep sdb1
+└─sdb1   8:17   0   20G  0 part 
+[root@altwks ~]# apt-get install cryptsetup
+Чтение списков пакетов... Завершено
+Построение дерева зависимостей... Завершено
+Последняя версия cryptsetup уже установлена.
+0 будет обновлено, 0 новых установлено, 0 пакетов будет удалено и 0 не будет обновлено.
+[root@altwks ~]# cryptsetup luksFormat /dev/sdb1
+
+WARNING!
+========
+Данные на /dev/sdb1 будут перезаписаны без возможности восстановления.
+
+Are you sure? (Type 'yes' in capital letters): YES
+Введите парольную фразу для /dev/sdb1: 
+Парольная фраза повторно: 
+Ошибка при проверке стойкости пароля: некорректная парольная фраза (недостаточно символов или классов для заданной длины)
+[root@altwks ~]# cryptsetup luksFormat /dev/sdb1
+
+WARNING!
+========
+Данные на /dev/sdb1 будут перезаписаны без возможности восстановления.
+
+Are you sure? (Type 'yes' in capital letters): YES
+Введите парольную фразу для /dev/sdb1: 
+Парольная фраза повторно: 
+[root@altwks ~]# 
+
+[root@altwks ~]# cryptsetup luksOpen /dev/sdb1 secdisk
+Введите парольную фразу для /dev/sdb1: 
+[root@altwks ~]# echo "secdisk /dev/sdb1" >> /etc/crypttab
+[root@altwks ~]# cat /etc/crypttab 
+secdisk /dev/sdb1
+[root@altwks ~]# cryptsetup luksDump /dev/sdb1
+LUKS header information
+Version:       	2
+Epoch:         	3
+Metadata area: 	16384 [bytes]
+Keyslots area: 	16744448 [bytes]
+UUID:          	2e6ccb7b-74a9-429d-a4d9-364aadeafac7
+Label:         	(no label)
+Subsystem:     	(no subsystem)
+Flags:       	(no flags)
+
+Data segments:
+  0: crypt
+	offset: 16777216 [bytes]
+	length: (whole device)
+	cipher: aes-xts-plain64
+	sector: 512 [bytes]
+
+Keyslots:
+  0: luks2
+	Key:        512 bits
+	Priority:   normal
+	Cipher:     aes-xts-plain64
+	Cipher key: 512 bits
+	PBKDF:      argon2i
+	Time cost:  4
+	Memory:     1048576
+	Threads:    2
+	Salt:       d0 a5 be c1 17 da 1d a6 c9 e7 17 78 bc 38 91 36 
+	            80 c3 55 d8 b7 cb 7c 8e 37 56 3e 4a c5 23 e7 49 
+	AF stripes: 4000
+	AF hash:    sha256
+	Area offset:32768 [bytes]
+	Area length:258048 [bytes]
+	Digest ID:  0
+Tokens:
+Digests:
+  0: pbkdf2
+	Hash:       sha256
+	Iterations: 74898
+	Salt:       3b 4c 43 c2 16 50 44 ea 0a 47 50 16 00 e4 c5 5b 
+	            ee 94 40 06 7b 13 67 f2 24 7f 2b af da 2b 0b a6 
+	Digest:     da 77 3f 85 d6 11 84 f2 c3 f2 dd be 32 98 f4 e3 
+	            a8 8e 9d 5a 05 83 d9 fa 35 1f 30 a7 96 bd 67 fa 
+[root@altwks ~]# 
+
+[root@altwks ~]# cryptsetup -v status secdisk 
+/dev/mapper/secdisk is active.
+  type:    LUKS2
+  cipher:  aes-xts-plain64
+  keysize: 512 bits
+  key location: keyring
+  device:  /dev/sdb1
+  sector size:  512
+  offset:  32768 sectors
+  size:    41908224 sectors
+  mode:    read/write
+Команда выполнена успешно.
+[root@altwks ~]# 
+
+[root@altwks ~]# mkfs.ext4 -t ext4 /dev/mapper/secdisk
+mke2fs 1.46.2 (28-Feb-2021)
+Creating filesystem with 5238528 4k blocks and 1310720 inodes
+Filesystem UUID: d89dc013-2992-4e6a-8786-233be822e59d
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done   
+
+[root@altwks ~]# ls -la /mnt/luksmnt
+ls: невозможно получить доступ к '/mnt/luksmnt': Нет такого файла или каталога
+[root@altwks ~]# ls -la /dev/mapper/secdisk 
+lrwxrwxrwx 1 root root 7 апр 16 21:28 /dev/mapper/secdisk -> ../dm-0
+[root@altwks ~]# 
+
+[root@altwks ~]# ls /dev/mapper/secdisk 
+/dev/mapper/secdisk
+[root@altwks ~]# mkfs.ext4 -t ext4 /dev/mapper/secdisk
+mke2fs 1.46.2 (28-Feb-2021)
+Creating filesystem with 5238528 4k blocks and 1310720 inodes
+Filesystem UUID: d89dc013-2992-4e6a-8786-233be822e59d
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done   
+
+[root@altwks ~]# ls -la /mnt/luksmnt
+ls: невозможно получить доступ к '/mnt/luksmnt': Нет такого файла или каталога
+[root@altwks ~]# ls -la /dev/mapper/secdisk 
+lrwxrwxrwx 1 root root 7 апр 16 21:28 /dev/mapper/secdisk -> ../dm-0
+[root@altwks ~]# mount /dev/mapper/secdisk /mnt/luksmnt
+mount: /mnt/luksmnt: mount point does not exist.
+       dmesg(1) may have more information after failed mount system call.
+[root@altwks ~]# mkdir /mnt/luksmnt
+[root@altwks ~]# mount /dev/mapper/secdisk /mnt/luksmnt
+[root@altwks ~]# ls -la /mnt/luksmnt
+итого 24
+drwxr-xr-x 3 root root  4096 апр 16 21:28 .
+drwxr-xr-x 5 root root  4096 апр 16 21:31 ..
+drwx------ 2 root root 16384 апр 16 21:28 lost+found
+[root@altwks ~]# touch /mnt/luksmnt/test-file.txt
+[root@altwks ~]# ls -la /mnt/luksmnt
+итого 24
+drwxr-xr-x 3 root root  4096 апр 16 21:32 .
+drwxr-xr-x 5 root root  4096 апр 16 21:31 ..
+drwx------ 2 root root 16384 апр 16 21:28 lost+found
+-rw-r--r-- 1 root root     0 апр 16 21:32 test-file.txt
+[root@altwks ~]# echo "/dev/mapper/secdisk /mnt/luksmnt ext4 defaults 1 2" >> /etc/fstab
+[root@altwks ~]# cat /etc/fstab | grep 'secdisk'
+/dev/mapper/secdisk /mnt/luksmnt ext4 defaults 1 2
+[root@altwks ~]# 
+
+root@altwks ~]# umount /dev/mapper/secdisk
+[root@altwks ~]# mount -a
+[root@altwks ~]# ls -la /mnt/luksmnt
+итого 24
+drwxr-xr-x 3 root root  4096 апр 16 21:32 .
+drwxr-xr-x 5 root root  4096 апр 16 21:31 ..
+drwx------ 2 root root 16384 апр 16 21:28 lost+found
+-rw-r--r-- 1 root root     0 апр 16 21:32 test-file.txt
+[root@altwks ~]# 
+
+[root@altwks ~]# apt-get install encfs
+Чтение списков пакетов... Завершено
+Построение дерева зависимостей... Завершено
+Выбрано fuse-encfs для 'encfs'
+Следующие дополнительные пакеты будут установлены:
+  fuse fuse-encfs libtinyxml2.8
+Следующие НОВЫЕ пакеты будут установлены:
+  fuse fuse-encfs libtinyxml2.8
+0 будет обновлено, 3 новых установлено, 0 пакетов будет удалено и 0 не будет обновлено.
+Необходимо получить 517kB архивов.
+После распаковки потребуется дополнительно 2334kB дискового пространства.
+Продолжить? [Y/n] Y
+Получено: 1 http://ftp.altlinux.org p10/branch/x86_64/classic fuse 2.9.9-alt4:p10+315158.100.3.1@1677073740 [44,3kB]
+Получено: 2 http://ftp.altlinux.org p10/branch/x86_64/classic libtinyxml2.8 8.1.0-alt1:sisyphus+279682.100.1.2@1626660439 [33,3kB]
+Получено: 3 http://ftp.altlinux.org p10/branch/x86_64/classic fuse-encfs 1.9.5-alt1:sisyphus+259427.200.2.1@1602244400 [439kB]
+Получено 517kB за 0s (695kB/s).  
+Совершаем изменения...
+Подготовка...                                                #################################################################################################### [100%]
+Обновление / установка...
+1: libtinyxml2.8-8.1.0-alt1                                  #################################################################################################### [ 33%]
+2: fuse-2.9.9-alt4                                           #################################################################################################### [ 67%]
+3: fuse-encfs-1.9.5-alt1                                     #################################################################################################### [100%]
+Завершено.
+
+[root@altwks ~]# apt-cache show encfs
+Виртуальный пакет encfs предоставляется следующими пакетами:
+  fuse-encfs 1.9.5-alt1:sisyphus+259427.200.2.1@1602244400
+You should explicitly select one to show.
+E: Package encfs is a virtual package with multiple providers.
+[root@altwks ~]# 
+
+[sysadmin@altwks ~]$ id
+uid=500(sysadmin) gid=500(sysadmin) группы=500(sysadmin),10(wheel),14(uucp),19(proc),22(cdrom),36(vmusers),71(floppy),80(cdwriter),81(audio),83(radio),100(users),450(usershares),471(camera),476(vboxusers),478(fuse),481(video),491(vboxsf),492(vboxadd),498(xgrp),499(scanner)
+[sysadmin@altwks ~]$ pwd
+/home/sysadmin
+[sysadmin@altwks ~]$ mkdir Projects
+mkdir: невозможно создать каталог «Projects»: Файл существует
+[sysadmin@altwks ~]$ cd Projects
+[sysadmin@altwks Projects]$ mkdir encrypted decrypted
+[sysadmin@altwks Projects]$ encfs ~/Projects/encrypted ~/Projects/decrypted
+Создание нового зашифрованого раздела.
+Выберите одну из следующих букв:
+ введите "x" для режима эксперта,
+ введите "p" для режима максимальной секретности,
+ любой другая буква для выбора стандартного режима.
+?> x
+
+Выбрана ручная конфигурация.
+Доступны следующие алгоритмя шифрования:
+1. AES : 16 byte block cipher
+ -- Поддержка ключа длиной от 128 до 256 бит
+ -- Поддержка размера блока от 64 до 4096 байт
+2. Blowfish : 8 byte block cipher
+ -- Поддержка ключа длиной от 128 до 256 бит
+ -- Поддержка размера блока от 64 до 4096 байт
+3. CAMELLIA : 16 byte block cipher
+ -- Поддержка ключа длиной от 128 до 256 бит
+ -- Поддержка размера блока от 64 до 4096 байт
+
+Введите номер соответствующий Вашему выбору: 1
+
+Выбранный алгоритм "AES"
+
+Выберите размер ключа в битах. Выбранный шифр поддерживает размер ключа от 128 до 256 бит с шагом в 64 бит.
+К примеру: 
+128, 192, 256
+Выбранный размер ключа: 256
+
+Используется ключ размером 256 бит
+
+Выберите размер блока в байтах. Используемый шифр поддерживает размер от 64 до 4096 байт с шагом в 16 байт.
+Нажмите enter для выбора по умолчанию (1024 байт)
+
+размер блока файловой системы: 1024
+
+Используется блок файловой системы размером 1024 байт
+
+Доступны следующие алгоритмы зашифровки:
+1. Block : Block encoding, hides file name size somewhat
+2. Block32 : Block encoding with base32 output for case-insensitive systems
+3. Null : No encryption of filenames
+4. Stream : Stream encoding, keeps filenames as short as possible
+
+Введите номер соответствующий Вашему выбору: 1
+
+Выбранный алгоритм "Block""
+
+Включить цепи инициирующих векторов для имён файлов?
+Шифрование имён файлов будет зависеть от полного пути к файлу, 
+вместо шифрования каждой части пути отдельно.
+[y]/n: y  
+
+Хранить в каждом файле начальный вектор?
+Для хранения потребуется примерно на 8 байт больше на каждый файл.
+Производительность не должна измениться, кроме, возможно,
+производительности приложений, зависящих от поблочного ввода-вывода.
+[y]/n: y
+
+Enable filename to IV header chaining?
+This makes file data encoding dependent on the complete file path.
+If a file is renamed, it will not decode sucessfully unless it
+was renamed by encfs with the proper key.
+If this option is enabled, then hard links will not be supported
+in the filesystem.
+y/[n]: y
+
+Enable block authentication code headers
+on every block in a file?  This adds about 8 bytes per block
+to the storage requirements for a file, and significantly affects
+performance but it also means [almost] any modifications or errors
+within a block will be caught and will cause a read error.
+y/[n]: y
+
+Добавлять случайные байты в каждый заголовок блока?
+Данная опция уменьшит производительность системы, но будет гарантировать различные коды аудентификации. Также можно включить инициализацию
+векторов на каждый файл, что не приведет к 
+большому уменьшению производительности. 
+Введите количество байт от 0 (нет случайных байт) до 8: 1
+
+Пропускать пустые места в файлах?
+Это позволит избежать записи шифрованных блоков при создании
+пропусков в файлах.
+[y]/n: y
+
+
+Конфигурация завершена. Создана файловая система
+с следующими свойствами:
+Шифр файловой системы: "ssl/aes", версия 3:0:2
+Шифр файла: "nameio/block", версия 4:0:2
+Размер ключа: 256 бит
+Размер блока: 1024 байт, включая 9 байт MAC заголовок
+Каждый файл содержит 8-ми байтный заголовок с уникальными IV данными.
+Файловые имена зашифрованы с использованием режима сцепления вектора инициализации.
+Данные файла IV связаны с именем файла IV.
+File holes passed through to ciphertext.
+
+----------------------- ПРЕДУПРЕЖДЕНИЕ -----------------------
+
+Опция наружной инициализации векторного связывания включена.
+Эта опция запрещает использовать жесткие ссылки на файловой системе.
+Без жестких ссылок некоторые программы не будут работать.
+Не будут работать такие программы как 'mutt' и 'procmail'. 
+Для более подробной информации читайте списки рассылки encfs.
+Если вы желаете выбрать другие настройки
+конфигурации то нажмите CTRL-C и начните все заново.
+
+Введите пароль для доступа к файловой системе.
+Запомните пароль, так как в случае утери его, 
+будетневозможно востановить данные. Тем не менее
+этот пароль можно изменить с помощью утилиты encfsctl.
+
+Новый пароль EncFS: 
+Повторите пароль EncFS: 
+[sysadmin@altwks Projects]$ 
+
+[sysadmin@altwks Projects]$ 
+[sysadmin@altwks Projects]$ touch decrypted/test-file.txt
+[sysadmin@altwks Projects]$ ls encrypted/
+,aqu3DxQe658y8mtpluhlZ3J
+[sysadmin@altwks Projects]$ ls -la encrypted/
+итого 12
+drwxr-xr-x 2 sysadmin sysadmin 4096 апр 16 21:44 .
+drwxr-xr-x 4 sysadmin sysadmin 4096 апр 16 21:39 ..
+-rw-r--r-- 1 sysadmin sysadmin    0 апр 16 21:44 ,aqu3DxQe658y8mtpluhlZ3J
+-rw-r--r-- 1 sysadmin sysadmin 1309 апр 16 21:43 .encfs6.xml
+[sysadmin@altwks Projects]$ cat encrypted/,aqu3DxQe658y8mtpluhlZ3J 
+[sysadmin@altwks Projects]$ echo 'test-file.txt' >> decrypted/test-file.txt
+[sysadmin@altwks Projects]$ cat encrypted/,aqu3DxQe658y8mtpluhlZ3J 
+_=�1���Ί�n�Y2٧���w��1����[sysadmin@altwks Projects]$ 
+
+
+[sysadmin@altwks Projects]$ fusermount -u decrypted
+[sysadmin@altwks Projects]$ encfs encrypted/ decrypted/
+Когда запускается в режиме демона, необходимо указывать полные пути (начинающиеся с '/')
+Сборка: encfs версия 1.9.5
+
+Использование: encfs [options] rootDir mountPoint [-- [FUSE опции монтирования]]
+
+Общие опции:
+  -H			показать необязательные опции монтирования FUSE
+  -s			отключить мультипоточное выполнение
+  -f			запустить в фоновом режиме (не порождать демона).
+			Сообщения об ошибках будут посылаться на stderr
+			вместо системного лога.
+  -v, --verbose		подробный режим: вывод отладочных сообщений encfs
+  -i, --idle=MINUTES	Автоматически размонтировать после указанного промежутка времени
+  --anykey		Не проверять ключ на использование
+  --forcedecode		расшифровать данные, даже если ошибки обнаружены
+			(для файловых систем использующих MAC заголовки)
+  --public		вести себя как типичная многопользовательская файловая система
+
+			(encfs должна быть запущена с правами root)
+  --reverse		обратное шифрование
+  --reversewrite		reverse encryption with writes enabled
+  -c, --config=path		specifies config file (overrides ENV variable)
+  -u, --unmount		unmounts specified mountPoint
+  --extpass=program	Использовать внешнюю программу для отображения приглашения на ввод пароля
+
+К примеру, подмонтировать ~/crypt к хранилищу в ~/.crypt :
+    encfs ~/.crypt ~/crypt
+
+Для дополнительной информации, обратитесь к страницам руководства encfs(1)
+
+[sysadmin@altwks Projects]$ encfs ~/Projects/encrypted/ ~/Projects/decrypted/
+Пароль EncFS: 
+[sysadmin@altwks Projects]$ ls decrypted/
+test-file.txt
+[sysadmin@altwks Projects]$ cat decrypted/test-file.txt 
+test-file.txt
+[sysadmin@altwks Projects]$ 
+
+[sysadmin@altwks Projects]$ encfs ~/Projects/encrypted/ ~/Projects/decrypted/
+Пароль EncFS: 
+[sysadmin@altwks Projects]$ ls decrypted/
+test-file.txt
+[sysadmin@altwks Projects]$ cat decrypted/test-file.txt 
+test-file.txt
+[sysadmin@altwks Projects]$ ls -a ~/Projects/encrypted/
+.  ..  ,aqu3DxQe658y8mtpluhlZ3J  .encfs6.xml
+[sysadmin@altwks Projects]$ ls -a ~/Projects/decrypted/
+.  ..  test-file.txt
+[sysadmin@altwks Projects]$ cat ~/Projects/encrypted/\,aqu3DxQe658y8mtpluhlZ3J 
+_=�1���Ί�n�Y2٧���w��1����[sysadmin@altwks Projects]$ cat ~/Projects/decrypted/test-file.txt 
+test-file.txt
+[sysadmin@altwks Projects]$ 
+
+
+
+
+

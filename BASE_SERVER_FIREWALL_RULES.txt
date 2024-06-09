@@ -56,7 +56,7 @@ TRCRT_SRC_PORTS="32769:65535"            # Traceroute source ports.
 TRCRT_DST_PORTS="33434:33523"            # Traceroute destination ports.
 SQUID_PORT="3128"                        #
 #
-NS1="192.168.195.10"                     # Address of our local name server (Unbound at GW).
+NS1="192.168.195.10"                     # Address of our local name server (Unbound on GW).
 NS2="8.8.8.8"                            # Address of a remote name server.(Valid for debugging)
 POP_SRV="192.168.120.11"                 # Address of a remote pop server.
 MAIL_SRV="192.168.120.11"                # Address of a remote mail gateway.
@@ -70,7 +70,7 @@ ATLS_STDP="8080"                         # Standard Alterator-Port.
 BIND_PORT="53"                           # 53/udp for requests, 53/tpc for zone transfer.
 BIND_MNGMNT_PORT="953"                   # 953/tcp
 MY_VLAN_A="192.168.195.0/24"             # Serviced VLAN A.
-DNS_RN="192.168.195.1,192.168.110.2"     # INT GW IP addresses.
+DNS_RN="192.168.195.1,192.168.195.2,192.168.195.13"     # INT DNS Servers IP addresses.
 DNS_DELEG="192.168.195.13"               # office.testlab.lan. NS3.
 UNB_RES="192.168.195.10"                 # Unbound Resolving Filter. NS0.
 LOCAL_ADNIN="192.168.195.10"             # Local Support IP address.
@@ -215,9 +215,9 @@ $IPT -A OUTPUT -p udp --match multiport --sports $NTP_PORT,$BIND_PORT -s $SRV_IP
 # Logging Policies
 #
 $IPT -N LOGGING
-$IPT -A OUTPUT -j LOGGING
+#$IPT -A OUTPUT -j LOGGING
 $IPT -A FORWARD -j LOGGING
-$IPT -A INPUT -j LOGGING
+#$IPT -A INPUT -j LOGGING
 $IPT -A LOGGING -m limit --limit 600/min -j LOG --log-prefix "IPT-Logging: " --log-level 7
 $IPT -A INPUT -j LOG --log-level 4 --log-prefix '_IPT_IN_ '
 $IPT -A OUTPUT -j LOG --log-level 4 --log-prefix '_IPT_OUT_ '
@@ -250,4 +250,7 @@ $IPT -A _LOG_DROP_ -j DROP
 # iptables -nvL --line-numbers
 # journalctl -a | grep IPT ... etc
 # iptables-save > /etc/sysconfig/iptables
-#
+# systemctl enable --now iptables.service
+# systemctl status iptables.service
+# iptables -nvL
+# enjoy it

@@ -1,0 +1,389 @@
+[sysadmin@altwks Projects]$ su -
+Password: 
+[root@altwks ~]# apt-get install easy-rsa
+Чтение списков пакетов... Завершено
+Построение дерева зависимостей... Завершено
+Следующие НОВЫЕ пакеты будут установлены:
+  easy-rsa
+0 будет обновлено, 1 новых установлено, 0 пакетов будет удалено и 0 не будет обновлено.
+Необходимо получить 42,2kB архивов.
+После распаковки потребуется дополнительно 134kB дискового пространства.
+Получено: 1 http://ftp.altlinux.org p10/branch/noarch/classic easy-rsa 3.0.8-alt1:sisyphus+258945.100.1.1@1601482670 [42,2kB]
+Получено 42,2kB за 0s (84,1kB/s).
+Совершаем изменения...
+Подготовка...                                                #################################################################################################### [100%]
+Обновление / установка...
+1: easy-rsa-3.0.8-alt1                                       #################################################################################################### [100%]
+Завершено.
+[root@altwks ~]# apt-cache show easy-rsa
+Package: easy-rsa
+Section: Security/Networking
+Installed Size: 134240
+Maintainer: Vladimir Didenko <cow@altlinux.ru>
+Version: 3.0.8-alt1:sisyphus+258945.100.1.1@1601482670
+Pre-Depends: rpmlib(PayloadIsLzma)
+Depends: openssl, /bin/sh, coreutils, gawk, grep, sed
+Provides: easy-rsa (= 3.0.8-alt1:sisyphus+258945.100.1.1)
+Architecture: noarch
+Size: 42237
+MD5Sum: 76d181a435ef8ed6c1bbdc72c06e981f
+Filename: easy-rsa-3.0.8-alt1.noarch.rpm
+Description: Simple shell based CA utility
+ easy-rsa is a CLI utility to build and manage a PKI CA. In laymen's terms,
+ this means to create a root certificate authority, and request and sign
+ certificates, including sub-CAs and certificate revokation lists (CRL).
+Changelog:
+ * Ср сен 30 2020 Vladimir Didenko <cow@altlinux.org> 3.0.8-alt1
+ - new version
+ * Пт апр 10 2020 Vladimir Didenko <cow@altlinux.org> 3.0.7-alt1
+ - new version
+ * Ср мар 06 2019 Vladimir Didenko <cow@altlinux.org> 3.0.6-alt1
+ - new version
+ * Ср июл 25 2018 Vladimir Didenko <cow@altlinux.org> 3.0.4-alt1
+ - new version
+ * Ср июл 27 2016 Vladimir Didenko <cow@altlinux.org> 3.0.0-alt2
+ - v3.0.0-16-g5a429d2
+ * Ср июн 17 2015 Vladimir Didenko <cow@altlinux.org> 3.0.0-alt1
+ - Initial build for Sisyphus
+
+
+[root@altwks ~]# 
+
+mkdir /srv/ca
+chmod 700 /srv/ca
+cd /srv/ca/
+easyrsa init-pki
+ls /srv/ca/pki/
+cat /srv/ca/pki/openssl-easyrsa.cnf 
+ls /srv/ca/pki/
+ls /srv/ca/pki/safessl-easyrsa.cnf 
+cat /srv/ca/pki/safessl-easyrsa.cnf 
+
+[root@altwks ca]# easyrsa build-ca
+Using SSL: openssl OpenSSL 1.1.1w  11 Sep 2023
+
+Enter New CA Key Passphrase: 
+Re-Enter New CA Key Passphrase: 
+Generating RSA private key, 2048 bit long modulus (2 primes)
+....................+++++
+......................................................................................+++++
+e is 65537 (0x010001)
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Common Name (eg: your user, host, or server name) [Easy-RSA CA]:altwks.testlab.lan
+
+CA creation complete and you may now import and sign cert requests.
+Your new CA certificate file for publishing is at:
+/srv/ca/pki/ca.crt
+
+
+[root@altwks ca]# cat /srv/ca/pki/c
+ca.crt           certs_by_serial/ 
+[root@altwks ca]# cat /srv/ca/pki/ca.crt 
+-----BEGIN CERTIFICATE-----
+MIIDYDCCAkigAwIBAgIUbIwN9gT+q6b/r3j20CZkNY9cbAgwDQYJKoZIhvcNAQEL
+BQAwHTEbMBkGA1UEAwwSYWx0d2tzLnRlc3RsYWIubGFuMB4XDTI0MDQxNjE5Mjc1
+NFoXDTM0MDQxNDE5Mjc1NFowHTEbMBkGA1UEAwwSYWx0d2tzLnRlc3RsYWIubGFu
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApXzhphgPCdFxl6Rpt0gX
+qvFUs7r/y+sSTOaISyEv1s265t+4t6A7uE+5iEclXQbMTHjk4W7sGuw9ipdw8Nv0
+/3hTpvsuRjYPlDp/4OZZfiEIRgldukUM+vve1321234Si4aLb9++LYuirjeMSGWt
+sCRyeY/HHcgnjsVRka+YHDYUQCfxRhNXLwwI0fSRljIHQHYOXeLYxyVvy+IPf5M2
+EF+hMxb6CGKr2LQnd1pRrqI4cVaq66HQg9hzLd19CPdRU9kXlPL7HzjYYmS+iFgj
+W6abJk4ewjflsHr/uXDHWL8slC5U4fRZjMoc6PYAbBV1p+YnnehGbIRh+/DHlAdM
+YwIDAQABo4GXMIGUMB0GA1UdDgQWBBRuMoUZDKecohInLn0vWf9m6OcO2zBYBgNV
+HSMEUTBPgBRuMoUZDKecohInLn0vWf9m6OcO26EhpB8wHTEbMBkGA1UEAwwSYWx0
+d2tzLnRlc3RsYWIubG123456jA32BP6rpv+vePbQJmQ1j1xsCDAMBgNVHRMEBTAD
+AQH/MAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOCAQEAGGL2yHAbrMGiZf6h
+N6a83cr91+uKmgRsotqH4yc67zPVCXVTZ1aHKtvsY1FUUrEU/76OdHsMVdU7NMoH
+O15mFoFHjkgq1pzd03goISF4Ve22sGJkfYPLdsoAH4Dk18XM28JcmklQxGwMbHga
+TVDGDleLtPKddqS4Z2Sy5VT3fJLKcIOXcUr8P832sdm0L85+E2b4k/Zee2+PZWKC
+hYDOCnAj8NBP/qrqK5vs5oS0Lntbp4GwSPSmvxEI+L0d+PWOdhkRgFcLYmkJfdJH
+xCiVKpbLx9X+xfm/q4nKmSj5wTFWdboSG/vNI4Vj40KkT50AB2d1jMZF26r8x+u1
+HeUVbA==
+-----END CERTIFICATE-----
+[root@altwks ca]# cat /srv/ca/pki/private/ca.key 
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-256-CBC,A00EE8BC490DBEA0D0C3453DB8248528
+
+CAZ1FfJgWPZLhB2DMk+nCTj9MFcLxw54i4+B3lO8S5DnirpwP+8bgfFloQZ/XhR5
+seFJPhSqcYf5KvAtSecmxiBLnfBWMo7tR5Dlzuj8qyIm/FENMl9LjDosB9kMjh9j
+/fz3hTZfSeUWVxcU895CCK81yIFsH9wx6UdBwbVI/10NXXApbiw2MqRzj9XcefqB
+KlZCx7CitkBJnXOBvPnJDoXyuauGFUdDDUHaIRFJxAAUUIXr1jFGpkG2M0K+QnRp
+iHoeuknJ1tfrdnNd/6nKutoyU9xYo29Ius+xyrfESS0yt4A+q9pErcZjyPSrAn6y
+9ZzM583Tk+4ivdezTJMJP27SZXEy35PvnJ1BILUlH9m846An4pCBvFn0FonLuGeb
+WTvZm+iY0xPBe3suxZfchwtHdBhuUuvk5ezApyMes3SjzE8Y03FcULN5Yx+CNeme
+dWEUhjfvb1eSYqt7UdzO0cHkXuwZA3LSizK0isTsmftzLcmnGw3FpczNp10N7LlZ
+vmpX4VB5ugk1nUYcdmF+003000qQLCagcVNjryS/QGLfkeG0SHJpvGxbs44YDoVn
+7qNAyC8+UbcKBdhqjbGzBL1zakgOw45Z59e3N85c8jn4QC30RNY7CWlcKz+HJUwB
+xXd9mQ2Ed8ZNVeQX8ez7fF9TAIah3uOmiDESz8jd9V6N8qdIjfnR40fO2poxWO3I
+4Sa4cbXb2jnFq8/xdX2RHJFwaWT/RDeO9XPS4irmPgUv5QvarAxPNbGzz4Jv4rBA
+//hLanvlipOqe1CAPbbfnIfQsYv861yuHxmixcGzv5UnoKMOjPN4S/823xIPMPYI
++tnn/3H0pJOsVv8g4CnyNjhnsE9TzeXYV3/H5D5k+AwgdzMs5+cNwfvU3U8+c4HJ
+FYEICJ/036rxvV4VHTFEBfQNapOHeNxGpO6MGsYA1kkyZtLmiYLn3x2ssDDHNpTn
+/KUEDPKMIZtNFztlR+ts0SGNvEORxVzhLpyZZrtSzCQYoIZTzqq3f1bHrefpWIh+
++O0j+EdsBLItkJMpwdGRCWd6jPumwhRPZGwx0dKkhg/I306BybQwCX0hVjXmAFcE
+KWR8mQPTXvS1OgNV+EPiOo38mznTyTSseeDwCUbYR1KsnYACfRR1bzOeYE14ms1Q
+KXypKeeLZa6rP4M29JgizE/+QbO2/tzJsrcDqwAzr+2IyBXOrbOKoF06L5EjEUWh
+pdLgYe7Xb2rlOxxJ/NENhCWQh/42q/UzqiD1fsuwJKA0CItVfe+XkmIeBSi0S3J/
+4veEVgGegozFGnw3rIuPLLk5DbJV6oSJVOL8YJ2Nz1v0UAl3/r3NvdOwqywx8v9v
+JAJdYDafsbshHHR6yQFf/twBucL2XKdUoZ54qw387wCfWnFRQRknCAgX8MrX9/0B
+0000/F0y1cQlyn8Ia9lRl7ExalpPNZ7St9QGfZycXVIH6L9HXsycA3zlRgnx3+WA
+yY2tgeqgY5V3w6jAfgc7sdROo1Tp0Jb7OJlj/SXIo4y+cNGhnoHJ0g5J06lG2qJH
+SeYjOd1+NMxgzYhir4EGVED6fNqPWt8PevRZIkZtFCMVcH4+ehnSlvBvQyoSiR/m
+-----END RSA PRIVATE KEY-----
+[root@altwks ca]# 
+
+[root@altwks ca]# openssl x509 -text -in /srv/ca/pki/ca.crt 
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            6c:8c:0d:f6:04:fe:ab:a6:ff:af:78:f6:d0:26:64:35:8f:5c:6c:08
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN = altwks.testlab.lan
+        Validity
+            Not Before: Apr 16 19:27:54 2024 GMT
+            Not After : Apr 14 19:27:54 2034 GMT
+        Subject: CN = altwks.testlab.lan
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:a5:7c:e1:a6:18:0f:09:d1:71:97:a4:69:b7:48:
+                    17:aa:f1:54:b3:ba:ff:cb:eb:12:4c:e6:88:4b:21:
+                    2f:d6:cd:ba:e6:df:b8:b7:a0:3b:b8:4f:b9:88:47:
+                    25:5d:06:cc:4c:78:e4:e1:6e:ec:1a:ec:3d:8a:97:
+                    70:f0:db:f4:ff:78:53:a6:fb:2e:46:36:0f:94:3a:
+                    7f:e0:e6:59:7e:21:08:46:09:5d:ba:45:0c:fa:fb:
+                    de:ca:98:81:c4:d3:d2:8b:86:8b:6f:df:be:2d:8b:
+                    a2:ae:37:8c:48:65:ad:b0:24:72:79:8f:c7:1d:c8:
+                    27:8e:c5:51:91:af:98:1c:36:14:40:27:f1:46:13:
+                    57:2f:0c:08:d1:f4:91:96:32:07:40:76:0e:5d:e2:
+                    d8:c7:25:6f:cb:e2:0f:7f:93:36:10:5f:a1:33:16:
+                    fa:08:62:ab:d8:b4:27:77:5a:51:ae:a2:38:71:56:
+                    aa:eb:a1:d0:83:d8:73:2d:dd:7d:08:f7:51:53:d9:
+                    17:94:f2:fb:1f:38:d8:62:64:be:88:58:23:5b:a6:
+                    9b:26:4e:1e:c2:37:e5:b0:7a:ff:b9:70:c7:58:bf:
+                    2c:94:2e:54:e1:f4:59:8c:ca:1c:e8:f6:00:6c:15:
+                    75:a7:e6:27:9d:e8:46:6c:84:61:fb:f0:c7:94:07:
+                    4c:63
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Key Identifier: 
+                6E:32:85:19:0C:A7:9C:A2:12:27:2E:7D:2F:59:FF:66:E8:E7:0E:DB
+            X509v3 Authority Key Identifier: 
+                keyid:6E:32:85:19:0C:A7:9C:A2:12:27:2E:7D:2F:59:FF:66:E8:E7:0E:DB
+                DirName:/CN=altwks.testlab.lan
+                serial:6C:8C:0D:F6:04:FE:AB:A6:FF:AF:78:F6:D0:26:64:35:8F:5C:6C:08
+
+            X509v3 Basic Constraints: 
+                CA:TRUE
+            X509v3 Key Usage: 
+                Certificate Sign, CRL Sign
+    Signature Algorithm: sha256WithRSAEncryption
+         18:62:f6:c8:70:1b:ac:c1:a2:65:fe:a1:37:a6:bc:dd:ca:fd:
+         d7:eb:8a:9a:04:6c:a2:da:87:e3:27:3a:ef:33:d5:09:75:53:
+         67:56:87:2a:db:ec:63:51:54:52:b1:14:ff:be:8e:74:7b:0c:
+         55:d5:3b:34:ca:07:3b:5e:66:16:81:47:8e:48:2a:d6:9c:dd:
+         d3:78:28:21:21:78:55:ed:b6:b0:62:64:7d:83:cb:76:ca:00:
+         1f:80:e4:d7:c5:cc:db:c2:5c:9a:49:50:c4:6c:0c:6c:78:1a:
+         4d:50:c6:0e:57:8b:b4:f2:9d:76:a4:b8:67:64:b2:e5:54:f7:
+         7c:92:ca:70:83:97:71:4a:fc:3f:cd:f6:b1:d9:b4:2f:ce:7e:
+         13:66:f8:93:f6:5e:7b:6f:8f:65:62:82:85:80:ce:0a:70:23:
+         f0:d0:4f:fe:aa:ea:2b:9b:ec:e6:84:b4:2e:7b:5b:a7:81:b0:
+         48:f4:a6:bf:11:08:f8:bd:1d:f8:f5:8e:76:19:11:80:57:0b:
+         62:69:09:7d:d2:47:c4:28:95:2a:96:cb:c7:d5:fe:c5:f9:bf:
+         ab:89:ca:99:28:f9:c1:31:56:75:ba:12:1b:fb:cd:23:85:63:
+         e3:42:a4:4f:9d:00:07:67:75:8c:c6:45:db:aa:fc:c7:eb:b5:
+         1d:e5:15:6c
+-----BEGIN CERTIFICATE-----
+MIIDYDCCAkigAwIBAgIUbIwN9gT+q6b/r3j20CZkNY9cbAgwDQYJKoZIhvcNAQEL
+BQAwHTEbMBkGA1UEAwwSYWx0d2tzLnRlc3RsYWIubGFuMB4XDTI0MDQxNjE5Mjc1
+NFoXDTM0MDQxNDE5Mjc1NFowHTEbMBkGA1UEAwwSYWx0d2tzLnRlc3RsYWIubGFu
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApXzhphgPCdFxl6Rpt0gX
+qvFUs7r/y+sSTOaISyEv1s265t+4t6A7uE+5iEclXQbMTHjk4W7sGuw9ipdw8Nv0
+/3hTpvsuRjYPlDp/4OZZfiEIRgldukUM+vveypiBxNPSi4aLb9++LYuirjeMSGWt
+sCRyeY/HHcgnjsVRka+YHDYUQCfxRhNXLwwI0fSRljIHQHYOXeLYxyVvy+IPf5M2
+EF+hMxb6CGKr2LQnd1pRrqI4cVaq66HQg9hzLd19CPdRU9kXlPL7HzjYYmS+iFgj
+W6abJk4ewjflsHr/uXDHWL8slC5U4fRZjMoc6PYAbBV1p+YnnehGbIRh+/DHlAdM
+YwIDAQABo4GXMIGUMB0GA1UdDgQWBBRuMoUZDKecohInLn0vWf9m6OcO2zBYBgNV
+HSMEUTBPgBRuMoUZDKecohInLn0vWf9m6OcO26EhpB8wHTEbMBkGA1UEAwwSYWx0
+d2tzLnRlc3RsYWIubGFughRsjA32BP6rpv+vePbQJmQ1j1xsCDAMBgNVHRMEBTAD
+AQH/MAsGA1UdDwQEAwIBBjANBgkqhkiG9w0BAQsFAAOCAQEAGGL2yHAbrMGiZf6h
+N6a83cr91+uKmgRsotqH4yc67zPVCXVTZ1aHKtvsY1FUUrEU/76OdHsMVdU7NMoH
+O15mFoFHjkgq1pzd03goISF4Ve22sGJkfYPLdsoAH4Dk18XM28JcmklQxGwMbHga
+TVDGDleLtPKddqS4Z2Sy5VT3fJLKcIOXcUr8P832sdm0L85+E2b4k/Zee2+PZWKC
+hYDOCnAj8NBP/qrqK5vs5oS0Lntbp4GwSPSmvxEI+L0d+PWOdhkRgFcLYmkJfdJH
+xCiVKpbLx9X+xfm/q4nKmSj5wTFWdboSG/vNI4Vj40KkT50AB2d1jMZF26r8x+u1
+HeUVbA==
+-----END CERTIFICATE-----
+
+[root@altwks pki]# cd /srv/ca
+[root@altwks ca]# easyrsa import-req astra.req astra
+Using SSL: openssl OpenSSL 1.1.1w  11 Sep 2023
+
+The request has been successfully imported with a short name of: astra
+You may now use this name to perform signing operations on this request.
+
+
+[root@altwks ca]# easyrsa sign-req server astra
+Using SSL: openssl OpenSSL 1.1.1w  11 Sep 2023
+
+
+You are about to sign the following certificate.
+Please check over the details shown below for accuracy. Note that this request
+has not been cryptographically verified. Please be sure it came from a trusted
+source or that you have verified the request checksum with the sender.
+
+Request subject, to be signed as a server certificate for 825 days:
+
+subject=
+    commonName                = astra
+
+
+Type the word 'yes' to continue, or any other input to abort.
+  Confirm request details: yes
+Using configuration from /srv/ca/pki/easy-rsa-5178.22P5wc/tmp.z1O8I3
+Enter pass phrase for /srv/ca/pki/private/ca.key:
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+commonName            :ASN.1 12:'astra'
+Certificate is to be certified until Jul 20 20:53:24 2026 GMT (825 days)
+
+Write out database with 1 new entries
+Data Base Updated
+
+Certificate created at: /srv/ca/pki/issued/astra.crt
+
+[root@altwks ca]# openssl x509 -noout -text -in /srv/ca/pki/issued/astra.crt 
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            36:d3:a5:77:8c:92:c6:39:97:49:1e:25:9f:57:72:40
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN = altwks.testlab.lan
+        Validity
+            Not Before: Apr 16 20:53:24 2024 GMT
+            Not After : Jul 20 20:53:24 2026 GMT
+        Subject: CN = astra
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:cc:19:ac:69:a2:ae:2d:4e:2d:d6:bb:47:79:1d:
+                    b1:b9:96:58:d6:ff:c5:b8:ea:ab:62:37:53:51:0c:
+                    98:88:c3:25:66:5c:4c:9e:c6:32:c0:94:7f:e0:1c:
+                    f1:c0:d2:fe:79:36:1f:8a:cc:77:16:59:61:e3:60:
+                    7f:79:95:a6:29:5b:4b:c7:43:c0:43:75:27:15:38:
+                    b5:0b:14:ae:2e:15:76:1a:2a:e3:66:fb:69:39:bd:
+                    a3:0e:b0:c5:fb:29:92:d3:e4:41:29:2b:e3:42:19:
+                    43:2b:aa:ee:3f:e7:7d:12:69:0e:b4:a7:02:1e:40:
+                    e5:3a:f4:00:35:1e:c7:34:20:ce:9d:7e:11:62:97:
+                    ef:c6:c7:18:02:60:28:c8:b5:0e:cc:b7:65:04:25:
+                    ea:ca:df:7d:06:44:63:2e:a5:6e:db:8a:43:c2:1f:
+                    7f:7a:b3:54:35:c8:c8:21:dc:e1:21:e9:dc:3a:04:
+                    39:4a:63:9f:0f:38:26:59:76:b6:19:e4:00:77:ae:
+                    e7:34:77:df:ee:48:b7:c9:26:79:90:a2:59:56:d1:
+                    a8:bb:ad:06:28:5a:0a:cc:a0:52:ef:e8:11:af:1c:
+                    1e:29:9a:3f:ae:87:0f:77:77:a4:8c:c8:98:11:8c:
+                    7e:4f:22:b5:27:48:08:47:3b:3f:0f:05:f0:81:2e:
+                    52:d7
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            X509v3 Subject Key Identifier: 
+                54:45:E4:13:11:D0:FC:60:09:EE:AD:66:4A:CB:53:78:3A:49:9A:D8
+            X509v3 Authority Key Identifier: 
+                keyid:6E:32:85:19:0C:A7:9C:A2:12:27:2E:7D:2F:59:FF:66:E8:E7:0E:DB
+                DirName:/CN=altwks.testlab.lan
+                serial:6C:8C:0D:F6:04:FE:AB:A6:FF:AF:78:F6:D0:26:64:35:8F:5C:6C:08
+
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+            X509v3 Key Usage: 
+                Digital Signature, Key Encipherment
+            X509v3 Subject Alternative Name: 
+                DNS:astra
+    Signature Algorithm: sha256WithRSAEncryption
+         10:09:54:7f:87:4c:f4:0b:7c:5f:59:df:fa:0d:4d:b4:c2:c4:
+         d1:c5:95:64:f1:71:52:b2:4a:5e:70:f6:9d:5d:61:9e:78:67:
+         36:ee:27:e0:59:af:dd:29:4e:1d:50:e7:01:b4:22:3f:03:4d:
+         25:cd:51:b5:24:fc:e8:c3:d8:3a:aa:36:ba:da:ba:ce:29:ef:
+         0f:6c:b3:b0:92:f3:40:e2:c8:d0:49:3c:96:60:12:1b:81:c2:
+         fd:44:8d:08:31:83:80:88:b7:3d:ec:e2:0c:a1:26:07:9b:f4:
+         8d:70:4e:ff:25:40:43:41:8d:85:33:6c:87:3e:e4:54:8f:46:
+         76:9d:bb:9a:70:94:21:5b:3b:3d:72:3d:4f:dd:f4:38:cb:e2:
+         36:7a:43:64:1b:c1:2e:fd:4c:b8:07:11:78:c3:16:9f:c2:33:
+         69:ba:2f:52:17:67:1e:38:22:ed:0e:99:1d:3e:27:0a:78:d9:
+         b3:03:b5:ce:3e:42:13:11:cc:5d:3a:5f:d9:fa:98:9f:a1:ba:
+         e7:ae:2c:28:4d:a3:7d:4c:3f:bf:e7:b6:06:8f:8f:65:1b:93:
+         3b:28:cd:a9:69:29:7e:fe:45:59:9f:57:7a:86:7a:62:e0:bc:
+         a7:45:fd:e4:fd:1a:80:ef:94:54:65:ad:bc:ef:a7:cf:a8:e5:
+         57:57:fb:66
+[root@altwks ca]# 
+
+[root@altwks ca]# scp /srv/ca/pki/issued/astra.crt sa@192.168.123.100:/home/sa/astra.crt
+The authenticity of host '192.168.123.100 (192.168.123.100)' can't be established.
+ED25519 key fingerprint is SHA256:X1hcJusogLxi8FiyWrw5hY9EEIGHiuqHSvxY/1IWicg.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '192.168.123.100' (ED25519) to the list of known hosts.
+sa@192.168.123.100's password: 
+
+[root@altwks ca]# 
+
+
+
+[root@altwks ca]# easyrsa sign-req server astra.testlab.lan
+Using SSL: openssl OpenSSL 1.1.1w  11 Sep 2023
+
+
+You are about to sign the following certificate.
+Please check over the details shown below for accuracy. Note that this request
+has not been cryptographically verified. Please be sure it came from a trusted
+source or that you have verified the request checksum with the sender.
+
+Request subject, to be signed as a server certificate for 825 days:
+
+subject=
+    commonName                = astra.testlab.lan
+
+
+Type the word 'yes' to continue, or any other input to abort.
+  Confirm request details: yes
+Using configuration from /srv/ca/pki/easy-rsa-6155.hdPDoQ/tmp.VA4r4A
+Enter pass phrase for /srv/ca/pki/private/ca.key:
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+commonName            :ASN.1 12:'astra.testlab.lan'
+Certificate is to be certified until Jul 20 22:52:12 2026 GMT (825 days)
+
+Write out database with 1 new entries
+Data Base Updated
+
+Certificate created at: /srv/ca/pki/issued/astra.testlab.lan.crt
+
+[root@altwks ca]# scp /srv/ca/pki/issued/astra.testlab.lan.crt sa@astra:/home/sa/astra.testlab.lan.crt
+The authenticity of host 'astra (192.168.123.100)' can't be established.
+ED25519 key fingerprint is SHA256:X1hcJusogLxi8FiyWrw5hY9EEIGHiuqHSvxY/1IWicg.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'astra' (ED25519) to the list of known hosts.
+sa@astra's password: 
+
+
+
+
+
+
+
+
+
